@@ -1,85 +1,140 @@
 <template>
   <div class="perfil-page">
-    <!-- HEADER -->
+    <!-- HEADER ÚNICO -->
     <header class="header">
       <div class="logo">
         <img src="./logo.png" alt="Tópico" class="logo-img" />
-        <span class="logo-text">Tópico</span>
+        <div class="logo-text">
+          <span class="logo-title">Tópico</span>
+          <span class="logo-subtitle">Los Ángeles</span>
+        </div>
       </div>
       <nav class="nav">
         <a href="#" class="nav-link" @click.prevent="goToInicio">Inicio</a>
-        <a href="#" class="nav-link" @click.prevent="goToContacto">Contáctanos</a>
+        <a href="#" class="nav-link" @click.prevent="goToContacto"
+          >Contáctanos</a
+        >
         <a href="#" class="nav-link active">Mi perfil</a>
       </nav>
     </header>
 
     <!-- CONTENIDO PRINCIPAL -->
     <main class="main-content">
-      <h1 class="title">¡Bienvenido!</h1>
+      <h1 class="title">¡Bienvenido {{ nombreUsuario }}!</h1>
       <p class="subtitle">
         Aquí podrás reservar, pagar, reprogramar tus citas presenciales o
         teleconsultas y acceder a tu información de manera fácil y segura.
       </p>
 
       <div class="content-wrapper">
-        <!-- COLUMNA IZQUIERDA - PERFIL -->
-        <div class="left-column">
-          <!-- FOTO DE PERFIL -->
-          <div class="profile-section">
-            <div class="profile-photo">
-              <img v-if="userPhoto" :src="userPhoto" alt="Foto de perfil" />
-              <div v-else class="photo-placeholder">👤</div>
+        <!-- SECCIÓN DE PERFIL -->
+        <div class="perfil-section">
+          <!-- FOTO DE PERFIL Y BOTÓN RESERVAR -->
+          <div class="profile-header">
+            <div class="profile-info-box">
+              <div class="profile-photo">
+                <img v-if="userPhoto" :src="userPhoto" alt="Foto de perfil" />
+                <div v-else class="photo-placeholder">👤</div>
+              </div>
+              <div class="profile-text">
+                <p class="profile-title">Mi Perfil clínico</p>
+                <button class="edit-button" @click="editarPerfil">
+                  Editar mi perfil
+                </button>
+              </div>
             </div>
-            <div class="profile-info">
-              <p class="profile-title">Mi Perfil clínico</p>
-              <button class="edit-button" @click="editarPerfil">
-                Editar mi perfil
-              </button>
-            </div>
+
+            <!-- BOTÓN RESERVAR -->
+            <button class="btn-reservar" @click="reservarCita">
+              Reservar una cita presencial
+            </button>
           </div>
 
           <!-- CAMPOS DE INFORMACIÓN -->
           <div class="info-fields">
             <div class="info-field">
-              <label>Sexo</label>
-              <div class="field-value">{{ userData.sexo || '-' }}</div>
-              <small class="field-subtitle">Edad</small>
+              <label>Sexo:</label>
+              <span class="field-value">{{ userData.sexo }}</span>
             </div>
 
             <div class="info-field">
-              <label>Peso</label>
-              <div class="field-value">{{ userData.peso || '-' }}</div>
-              <small class="field-subtitle">Altura</small>
+              <label>Edad:</label>
+              <span class="field-value">{{ userData.edad }}</span>
             </div>
 
             <div class="info-field">
-              <label>Grupo Sanguíneo</label>
-              <div class="field-value">{{ userData.grupoSanguineo || '-' }}</div>
+              <label>Peso:</label>
+              <span class="field-value">{{ userData.peso }}</span>
+            </div>
+
+            <div class="info-field">
+              <label>Altura:</label>
+              <span class="field-value">{{ userData.altura }}</span>
+            </div>
+
+            <div class="info-field">
+              <label>Grupo Sanguíneo:</label>
+              <span class="field-value">{{ userData.grupoSanguineo }}</span>
             </div>
           </div>
 
-          <!-- CITAS PRESENCIALES PROGRAMADAS -->
-          <div class="section-card" @click="toggleCitasPresenciales">
-            <span>Citas Presenciales Programadas</span>
-            <button class="favorite-btn">
-              <span class="heart">🖤</span>
-            </button>
+          <!-- CITAS PRESENCIALES PROGRAMADAS - DESPLEGABLE -->
+          <div class="section-accordion">
+            <div class="accordion-header" @click="toggleCitasPresenciales">
+              <span>Citas Presenciales Programadas</span>
+              <span class="arrow" :class="{ open: showCitasPresenciales }"
+                >▼</span
+              >
+            </div>
+            <transition name="slide">
+              <div v-if="showCitasPresenciales" class="accordion-content">
+                <div
+                  v-if="citasPresenciales.length === 0"
+                  class="empty-message"
+                >
+                  No tienes citas programadas
+                </div>
+                <div
+                  v-else
+                  class="cita-item"
+                  v-for="cita in citasPresenciales"
+                  :key="cita.id"
+                >
+                  <p><strong>Fecha:</strong> {{ cita.fecha }}</p>
+                  <p><strong>Hora:</strong> {{ cita.hora }}</p>
+                  <p><strong>Especialidad:</strong> {{ cita.especialidad }}</p>
+                  <p><strong>Doctor:</strong> {{ cita.doctor }}</p>
+                </div>
+              </div>
+            </transition>
           </div>
 
-          <!-- HISTORIAL DE CITAS -->
-          <div class="section-card" @click="toggleHistorial">
-            <span>Historial de Citas Presenciales</span>
-            <button class="favorite-btn">
-              <span class="heart">🖤</span>
-            </button>
+          <!-- HISTORIAL DE CITAS - DESPLEGABLE -->
+          <div class="section-accordion">
+            <div class="accordion-header" @click="toggleHistorial">
+              <span>Historial de Citas Presenciales</span>
+              <span class="arrow" :class="{ open: showHistorial }">▼</span>
+            </div>
+            <transition name="slide">
+              <div v-if="showHistorial" class="accordion-content">
+                <div v-if="historialCitas.length === 0" class="empty-message">
+                  No tienes historial de citas
+                </div>
+                <div
+                  v-else
+                  class="cita-item"
+                  v-for="cita in historialCitas"
+                  :key="cita.id"
+                >
+                  <p><strong>Fecha:</strong> {{ cita.fecha }}</p>
+                  <p><strong>Hora:</strong> {{ cita.hora }}</p>
+                  <p><strong>Especialidad:</strong> {{ cita.especialidad }}</p>
+                  <p><strong>Doctor:</strong> {{ cita.doctor }}</p>
+                  <p><strong>Estado:</strong> {{ cita.estado }}</p>
+                </div>
+              </div>
+            </transition>
           </div>
-        </div>
-
-        <!-- COLUMNA DERECHA - BOTÓN RESERVAR -->
-        <div class="right-column">
-          <button class="btn-reservar" @click="reservarCita">
-            Reservar una cita presencial
-          </button>
         </div>
       </div>
     </main>
@@ -92,14 +147,58 @@ import { useRouter } from "vue-router";
 
 const router = useRouter();
 
+// Nombre del usuario (obtenido del sistema de autenticación)
+const nombreUsuario = ref("Juan Pérez");
+
 const userPhoto = ref("");
 const userData = reactive({
   sexo: "Masculino",
-  edad: "28 años",
-  peso: "75 kg",
-  altura: "1.75 m",
+  edad: "18",
+  peso: "45 kg",
+  altura: "1.58 m",
   grupoSanguineo: "O+",
 });
+
+// Estados de los desplegables
+const showCitasPresenciales = ref(false);
+const showHistorial = ref(false);
+
+// Datos de ejemplo
+const citasPresenciales = ref([
+  {
+    id: 1,
+    fecha: "15/12/2024",
+    hora: "10:00 AM",
+    especialidad: "Medicina General",
+    doctor: "Dr. García López",
+  },
+  {
+    id: 2,
+    fecha: "20/12/2024",
+    hora: "3:00 PM",
+    especialidad: "Cardiología",
+    doctor: "Dra. María Fernández",
+  },
+]);
+
+const historialCitas = ref([
+  {
+    id: 1,
+    fecha: "10/11/2024",
+    hora: "9:00 AM",
+    especialidad: "Medicina General",
+    doctor: "Dr. García López",
+    estado: "Completada",
+  },
+  {
+    id: 2,
+    fecha: "05/10/2024",
+    hora: "2:00 PM",
+    especialidad: "Dermatología",
+    doctor: "Dr. Carlos Ruiz",
+    estado: "Completada",
+  },
+]);
 
 function goToInicio() {
   router.push("/");
@@ -119,13 +218,11 @@ function reservarCita() {
 }
 
 function toggleCitasPresenciales() {
-  console.log("Mostrar citas presenciales programadas");
-  // Aquí iría la lógica para mostrar/ocultar las citas
+  showCitasPresenciales.value = !showCitasPresenciales.value;
 }
 
 function toggleHistorial() {
-  console.log("Mostrar historial de citas");
-  // Aquí iría la lógica para mostrar/ocultar el historial
+  showHistorial.value = !showHistorial.value;
 }
 </script>
 
@@ -143,34 +240,51 @@ function toggleHistorial() {
   background-color: #b8bdc4;
 }
 
-/* HEADER */
+/* HEADER ÚNICO */
 .header {
   background-color: #e8eaed;
-  padding: 20px 40px;
+  padding: 20px 50px;
   display: flex;
   justify-content: space-between;
   align-items: center;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  position: sticky;
+  top: 0;
+  z-index: 100;
 }
 
 .logo {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 15px;
 }
 
 .logo-img {
-  width: 50px;
-  height: 50px;
-  border-radius: 50%;
-  background-color: #5bc9ab;
+  width: 60px;
+  height: 60px;
+  border-radius: 12px;
+  object-fit: cover;
 }
 
 .logo-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.logo-title {
   font-family: "Caveat", cursive;
-  font-size: 24px;
+  font-size: 28px;
   font-weight: 700;
   color: #2c2c2c;
+  line-height: 1;
+}
+
+.logo-subtitle {
+  font-family: "Patrick Hand", cursive;
+  font-size: 14px;
+  color: #666;
+  line-height: 1;
 }
 
 .nav {
@@ -181,70 +295,94 @@ function toggleHistorial() {
 
 .nav-link {
   font-family: "Caveat", cursive;
-  font-size: 22px;
+  font-size: 24px;
   color: #2c2c2c;
   text-decoration: none;
-  transition: color 0.3s ease;
+  transition: all 0.3s ease;
   cursor: pointer;
+  position: relative;
 }
 
-.nav-link:hover,
+.nav-link:hover {
+  color: #5bc9ab;
+}
+
 .nav-link.active {
   color: #5bc9ab;
   font-weight: 700;
 }
 
+.nav-link.active::after {
+  content: "";
+  position: absolute;
+  bottom: -5px;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background-color: #5bc9ab;
+  border-radius: 2px;
+}
+
 /* CONTENIDO PRINCIPAL */
 .main-content {
-  padding: 40px 60px;
+  padding: 50px 60px;
+  max-width: 1400px;
+  margin: 0 auto;
 }
 
 .title {
   font-family: "Caveat", cursive;
-  font-size: clamp(36px, 6vw, 48px);
+  font-size: clamp(38px, 6vw, 52px);
   font-weight: 700;
   text-align: center;
-  margin-bottom: 15px;
+  margin-bottom: 20px;
   color: #2c2c2c;
 }
 
 .subtitle {
   font-family: "Patrick Hand", cursive;
-  font-size: clamp(14px, 2.5vw, 16px);
+  font-size: clamp(15px, 2.5vw, 18px);
   text-align: center;
-  margin-bottom: 40px;
+  margin-bottom: 50px;
   color: #2c2c2c;
-  line-height: 1.6;
-  max-width: 900px;
+  line-height: 1.7;
+  max-width: 950px;
   margin-left: auto;
   margin-right: auto;
 }
 
 .content-wrapper {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  gap: 30px;
-  max-width: 1200px;
+  max-width: 1000px;
   margin: 0 auto;
 }
 
-/* COLUMNA IZQUIERDA */
-.left-column {
+/* SECCIÓN DE PERFIL */
+.perfil-section {
   display: flex;
   flex-direction: column;
-  gap: 15px;
+  gap: 20px;
 }
 
-.profile-section {
+.profile-header {
   display: flex;
+  justify-content: space-between;
   align-items: center;
-  gap: 20px;
+  gap: 30px;
+  flex-wrap: wrap;
   margin-bottom: 10px;
 }
 
+.profile-info-box {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex: 1;
+  min-width: 250px;
+}
+
 .profile-photo {
-  width: 80px;
-  height: 80px;
+  width: 90px;
+  height: 90px;
   border-radius: 50%;
   background-color: #5bc9ab;
   display: flex;
@@ -252,6 +390,7 @@ function toggleHistorial() {
   justify-content: center;
   overflow: hidden;
   flex-shrink: 0;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
 .profile-photo img {
@@ -261,132 +400,47 @@ function toggleHistorial() {
 }
 
 .photo-placeholder {
-  font-size: 40px;
+  font-size: 45px;
   color: white;
 }
 
-.profile-info {
-  flex: 1;
+.profile-text {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
 }
 
 .profile-title {
   font-family: "Patrick Hand", cursive;
-  font-size: 18px;
+  font-size: 20px;
   font-weight: 600;
   color: #2c2c2c;
-  margin-bottom: 5px;
 }
 
 .edit-button {
   background: none;
   border: none;
   font-family: "Patrick Hand", cursive;
-  font-size: 15px;
-  color: #2c2c2c;
+  font-size: 16px;
+  color: #5bc9ab;
   text-decoration: underline;
   cursor: pointer;
   padding: 0;
+  text-align: left;
+  transition: color 0.3s ease;
 }
 
 .edit-button:hover {
-  color: #5bc9ab;
+  color: #4ab89a;
 }
 
-/* CAMPOS DE INFORMACIÓN */
-.info-fields {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.info-field {
-  background-color: rgba(255, 255, 255, 0.7);
-  border: 2px solid #5bc9ab;
-  border-radius: 12px;
-  padding: 12px 18px;
-}
-
-.info-field label {
-  font-family: "Patrick Hand", cursive;
-  font-size: 16px;
-  font-weight: 600;
-  color: #2c2c2c;
-  display: block;
-  margin-bottom: 4px;
-}
-
-.field-value {
-  font-family: "Patrick Hand", cursive;
-  font-size: 15px;
-  color: #2c2c2c;
-}
-
-.field-subtitle {
-  font-family: "Patrick Hand", cursive;
-  font-size: 14px;
-  color: #666;
-  display: block;
-  margin-top: 2px;
-}
-
-/* SECCIONES CON FAVORITO */
-.section-card {
-  background-color: #5bc9ab;
-  border-radius: 12px;
-  padding: 15px 20px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  margin-top: 10px;
-}
-
-.section-card:hover {
-  background-color: #4ab89a;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-}
-
-.section-card span {
-  font-family: "Patrick Hand", cursive;
-  font-size: 16px;
-  font-weight: 600;
-  color: #2c2c2c;
-}
-
-.favorite-btn {
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 5px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.heart {
-  font-size: 24px;
-  transition: transform 0.3s ease;
-}
-
-.favorite-btn:hover .heart {
-  transform: scale(1.2);
-}
-
-/* COLUMNA DERECHA */
-.right-column {
-  display: flex;
-  align-items: flex-start;
-  padding-top: 100px;
-}
-
+/* BOTÓN RESERVAR */
 .btn-reservar {
   background-color: #5bc9ab;
   color: #2c2c2c;
   border: none;
   border-radius: 15px;
-  padding: 18px 35px;
+  padding: 16px 35px;
   font-family: "Patrick Hand", cursive;
   font-size: 18px;
   font-weight: 600;
@@ -399,22 +453,169 @@ function toggleHistorial() {
 .btn-reservar:hover {
   background-color: #4ab89a;
   transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.2);
+}
+
+/* CAMPOS DE INFORMACIÓN */
+.info-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 15px;
+}
+
+.info-field {
+  background-color: rgba(255, 255, 255, 0.8);
+  border: 2px solid #5bc9ab;
+  border-radius: 12px;
+  padding: 14px 20px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  transition: all 0.3s ease;
+}
+
+.info-field:hover {
+  background-color: rgba(255, 255, 255, 0.95);
+  transform: translateX(5px);
+}
+
+.info-field label {
+  font-family: "Patrick Hand", cursive;
+  font-size: 17px;
+  font-weight: 600;
+  color: #2c2c2c;
+  min-width: 150px;
+}
+
+.field-value {
+  font-family: "Patrick Hand", cursive;
+  font-size: 16px;
+  color: #2c2c2c;
+}
+
+/* ACORDEONES DESPLEGABLES */
+.section-accordion {
+  background-color: #5bc9ab;
+  border-radius: 12px;
+  overflow: hidden;
+  margin-top: 15px;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+}
+
+.accordion-header {
+  padding: 18px 25px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  user-select: none;
+}
+
+.accordion-header:hover {
+  background-color: #4ab89a;
+}
+
+.accordion-header span:first-child {
+  font-family: "Patrick Hand", cursive;
+  font-size: 18px;
+  font-weight: 600;
+  color: #2c2c2c;
+}
+
+.arrow {
+  font-size: 16px;
+  color: #2c2c2c;
+  transition: transform 0.3s ease;
+}
+
+.arrow.open {
+  transform: rotate(180deg);
+}
+
+.accordion-content {
+  background-color: rgba(255, 255, 255, 0.95);
+  padding: 20px;
+  border-top: 2px solid rgba(0, 0, 0, 0.1);
+}
+
+.empty-message {
+  font-family: "Patrick Hand", cursive;
+  font-size: 15px;
+  color: #666;
+  text-align: center;
+  padding: 15px;
+  font-style: italic;
+}
+
+.cita-item {
+  background-color: rgba(255, 255, 255, 0.9);
+  border: 2px solid #5bc9ab;
+  border-radius: 10px;
+  padding: 15px;
+  margin-bottom: 12px;
+  transition: all 0.3s ease;
+}
+
+.cita-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.cita-item:last-child {
+  margin-bottom: 0;
+}
+
+.cita-item p {
+  font-family: "Patrick Hand", cursive;
+  font-size: 15px;
+  color: #2c2c2c;
+  margin-bottom: 6px;
+}
+
+.cita-item p:last-child {
+  margin-bottom: 0;
+}
+
+.cita-item strong {
+  font-weight: 600;
+  color: #5bc9ab;
+}
+
+/* ANIMACIÓN DE SLIDE */
+.slide-enter-active {
+  transition: all 0.4s ease;
+}
+
+.slide-leave-active {
+  transition: all 0.3s ease;
+}
+
+.slide-enter-from {
+  max-height: 0;
+  opacity: 0;
+  padding-top: 0;
+  padding-bottom: 0;
+}
+
+.slide-leave-to {
+  max-height: 0;
+  opacity: 0;
+  padding-top: 0;
+  padding-bottom: 0;
 }
 
 /* RESPONSIVE */
 @media (max-width: 1024px) {
-  .content-wrapper {
-    grid-template-columns: 1fr;
-  }
-
-  .right-column {
-    padding-top: 0;
-    justify-content: center;
+  .profile-header {
+    flex-direction: column;
+    align-items: stretch;
   }
 
   .btn-reservar {
     width: 100%;
+    text-align: center;
   }
 }
 
@@ -422,13 +623,64 @@ function toggleHistorial() {
   .header {
     flex-direction: column;
     gap: 20px;
-    padding: 20px;
+    padding: 20px 30px;
   }
 
   .nav {
-    gap: 20px;
+    gap: 25px;
     flex-wrap: wrap;
     justify-content: center;
+  }
+
+  .nav-link {
+    font-size: 20px;
+  }
+
+  .main-content {
+    padding: 35px 25px;
+  }
+
+  .profile-info-box {
+    flex-direction: column;
+    text-align: center;
+    align-items: center;
+  }
+
+  .edit-button {
+    text-align: center;
+  }
+
+  .info-field {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .info-field label {
+    min-width: auto;
+  }
+}
+
+@media (max-width: 480px) {
+  .header {
+    padding: 15px 20px;
+  }
+
+  .logo-img {
+    width: 50px;
+    height: 50px;
+  }
+
+  .logo-title {
+    font-size: 24px;
+  }
+
+  .logo-subtitle {
+    font-size: 12px;
+  }
+
+  .nav {
+    gap: 18px;
   }
 
   .nav-link {
@@ -436,47 +688,15 @@ function toggleHistorial() {
   }
 
   .main-content {
-    padding: 30px 20px;
+    padding: 25px 15px;
   }
 
-  .profile-section {
-    flex-direction: column;
-    text-align: center;
-  }
-
-  .profile-photo {
-    width: 100px;
-    height: 100px;
-  }
-}
-
-@media (max-width: 480px) {
-  .header {
-    padding: 15px;
-  }
-
-  .logo-text {
-    font-size: 20px;
-  }
-
-  .nav {
-    gap: 15px;
-  }
-
-  .nav-link {
-    font-size: 16px;
-  }
-
-  .main-content {
-    padding: 20px 15px;
-  }
-
-  .section-card span {
-    font-size: 14px;
+  .accordion-header span:first-child {
+    font-size: 15px;
   }
 
   .btn-reservar {
-    padding: 15px 25px;
+    padding: 14px 25px;
     font-size: 16px;
   }
 }
