@@ -1,24 +1,23 @@
 <template>
   <div class="reservar-cita-page">
-    <!-- CONTENIDO PRINCIPAL -->
     <main class="main-content">
       <h1 class="title">Reservar Cita</h1>
       <p class="subtitle">
-        Reserva tu Cita o la de tu familiar haciendo click en su nombre.
+        ¡Es muy fácil! Puedes reservar tu cita buscando por médico o por fecha.
       </p>
 
       <!-- STEPPER / PROGRESS BAR -->
       <div class="stepper">
+        <div class="step completed">
+          <div class="step-circle completed"></div>
+          <div class="step-line completed"></div>
+        </div>
+        <div class="step completed">
+          <div class="step-circle completed"></div>
+          <div class="step-line completed"></div>
+        </div>
         <div class="step active">
           <div class="step-circle active"></div>
-          <div class="step-line"></div>
-        </div>
-        <div class="step">
-          <div class="step-circle"></div>
-          <div class="step-line"></div>
-        </div>
-        <div class="step">
-          <div class="step-circle"></div>
           <div class="step-line"></div>
         </div>
         <div class="step">
@@ -32,41 +31,41 @@
 
       <!-- LABEL DEL PASO ACTUAL -->
       <div class="step-label">
-        <p>Paso 1: Seleccione paciente</p>
+        <p>Paso 3: Seleccione Medico</p>
       </div>
 
       <!-- FORMULARIO -->
       <div class="form-container">
-        <!-- TITULAR -->
+        <!-- SELECCIONAR CRITERIO DE BÚSQUEDA -->
         <div class="section">
-          <h2 class="section-title">Titular</h2>
-          <input
-            type="text"
-            class="input-field"
-            placeholder="Ingrese el nombre del paciente"
-            v-model="nombreTitular"
-          />
-        </div>
+          <h2 class="section-title">Seleccionar criterio de búsqueda</h2>
 
-        <!-- FAMILIAR -->
-        <div class="section">
-          <h2 class="section-title">Familiar</h2>
-          <p class="section-subtitle">Registra a tus familiares</p>
-
-          <!-- LISTA DE FAMILIARES -->
-          <div v-if="familiares.length > 0" class="familiares-list">
+          <div class="criterio-buttons">
             <button
-              v-for="familiar in familiares"
-              :key="familiar.id"
-              class="familiar-btn"
-              @click="seleccionarFamiliar(familiar)"
+              class="criterio-btn"
+              :class="{ active: criterioBusqueda === 'medico' }"
+              @click="criterioBusqueda = 'medico'"
             >
-              {{ familiar.nombre }}
+              Buscar por Medico
+            </button>
+            <button
+              class="criterio-btn"
+              :class="{ active: criterioBusqueda === 'fecha' }"
+              @click="criterioBusqueda = 'fecha'"
+            >
+              Buscar por Fecha
             </button>
           </div>
+        </div>
 
-          <!-- BOTÓN CONTINUAR -->
-          <button class="btn-continuar" @click="continuarPaso2">
+        <!-- BOTONES DE ACCIÓN -->
+        <div class="action-buttons">
+          <button class="btn-regresar" @click="regresarPaso2">Regresar</button>
+          <button
+            class="btn-continuar"
+            :disabled="!criterioBusqueda"
+            @click="continuarPaso4"
+          >
             Continuar
           </button>
         </div>
@@ -81,27 +80,24 @@ import { useRouter } from "vue-router";
 
 const router = useRouter();
 
-// Datos del formulario
-const nombreTitular = ref("");
-const familiares = ref([
-  { id: 1, nombre: "María Pérez" },
-  { id: 2, nombre: "Carlos Pérez" },
-]);
+// Estado del formulario
+const criterioBusqueda = ref<"medico" | "fecha" | null>(null);
 
-function seleccionarFamiliar(familiar: any) {
-  console.log("Familiar seleccionado:", familiar);
-  // Aquí puedes guardar el familiar seleccionado en un store o pasarlo como parámetro
+function regresarPaso2() {
+  router.push({ name: "ReservarCitaPaso2" });
 }
 
-function continuarPaso2() {
-  // Validar que haya un nombre ingresado
-  if (!nombreTitular.value.trim()) {
-    alert("Por favor ingrese el nombre del paciente");
+function continuarPaso4() {
+  if (!criterioBusqueda.value) {
+    alert("Por favor selecciona un criterio de búsqueda");
     return;
   }
-  // Redirigir al paso 2
-  console.log("Continuar al paso 2 con:", nombreTitular.value);
-  router.push({ name: "ReservarCitaPaso2" });
+
+  console.log("Criterio seleccionado:", criterioBusqueda.value);
+
+  // Aquí irías al paso 4
+  router.push({ name: "ReservarCitaPaso4" });
+  alert(`Ir al Paso 4 - Búsqueda por ${criterioBusqueda.value}`);
 }
 </script>
 
@@ -119,7 +115,6 @@ function continuarPaso2() {
   background-color: #b8bdc4;
 }
 
-/* CONTENIDO PRINCIPAL */
 .main-content {
   padding: 50px 60px;
   max-width: 1200px;
@@ -142,6 +137,9 @@ function continuarPaso2() {
   margin-bottom: 40px;
   color: #2c2c2c;
   line-height: 1.6;
+  max-width: 900px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 /* STEPPER */
@@ -167,9 +165,13 @@ function continuarPaso2() {
   flex-shrink: 0;
 }
 
-.step-circle.active {
+.step-circle.completed {
   background-color: #5bc9ab;
-  box-shadow: 0 0 0 4px rgba(91, 201, 171, 0.3);
+}
+
+.step-circle.active {
+  background-color: #7a8088;
+  box-shadow: 0 0 0 4px rgba(122, 128, 136, 0.3);
 }
 
 .step-line {
@@ -177,6 +179,10 @@ function continuarPaso2() {
   height: 4px;
   background-color: #7a8088;
   margin: 0 -2px;
+}
+
+.step-line.completed {
+  background-color: #5bc9ab;
 }
 
 .step:last-child .step-line {
@@ -190,7 +196,7 @@ function continuarPaso2() {
   border-radius: 15px;
   padding: 12px 30px;
   display: inline-block;
-  margin-bottom: 40px;
+  margin-bottom: 60px;
   margin-left: 60px;
 }
 
@@ -203,109 +209,112 @@ function continuarPaso2() {
 
 /* FORMULARIO */
 .form-container {
-  max-width: 800px;
+  max-width: 1100px;
   margin: 0 auto;
   display: flex;
   flex-direction: column;
-  gap: 40px;
+  gap: 50px;
 }
 
 .section {
   display: flex;
   flex-direction: column;
-  gap: 15px;
+  gap: 30px;
+  align-items: center;
 }
 
 .section-title {
   font-family: "Caveat", cursive;
-  font-size: 32px;
+  font-size: 38px;
   font-weight: 700;
   color: #2c2c2c;
   text-align: center;
-  margin-bottom: 5px;
 }
 
-.section-subtitle {
-  font-family: "Patrick Hand", cursive;
-  font-size: 16px;
-  color: #2c2c2c;
-  text-align: center;
-  margin-bottom: 10px;
-}
-
-/* INPUT FIELD */
-.input-field {
-  width: 100%;
-  padding: 18px 25px;
-  border: none;
-  border-radius: 15px;
-  background-color: rgba(255, 255, 255, 0.9);
-  font-family: "Patrick Hand", cursive;
-  font-size: 18px;
-  color: #2c2c2c;
-  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
-  transition: all 0.3s ease;
-}
-
-.input-field:focus {
-  outline: none;
-  box-shadow: 0 4px 15px rgba(91, 201, 171, 0.3);
-  background-color: white;
-}
-
-.input-field::placeholder {
-  color: #666;
-  font-style: italic;
-}
-
-/* FAMILIARES LIST */
-.familiares-list {
+/* BOTONES DE CRITERIO */
+.criterio-buttons {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  margin-bottom: 20px;
+  gap: 20px;
+  width: 100%;
+  max-width: 1100px;
 }
 
-.familiar-btn {
-  padding: 16px 25px;
-  border: 2px solid #5bc9ab;
-  border-radius: 12px;
-  background-color: rgba(255, 255, 255, 0.9);
+.criterio-btn {
+  padding: 22px 40px;
+  border: 3px solid #5bc9ab;
+  border-radius: 15px;
+  background-color: rgba(255, 255, 255, 0.95);
   font-family: "Patrick Hand", cursive;
-  font-size: 18px;
+  font-size: 20px;
+  font-weight: 600;
   color: #2c2c2c;
   cursor: pointer;
   transition: all 0.3s ease;
-  text-align: left;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+  text-align: center;
 }
 
-.familiar-btn:hover {
+.criterio-btn:hover {
+  background-color: white;
+  transform: translateX(5px);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.15);
+}
+
+.criterio-btn.active {
   background-color: #5bc9ab;
   color: white;
-  transform: translateX(5px);
+  border-color: #5bc9ab;
+  box-shadow: 0 5px 15px rgba(91, 201, 171, 0.4);
 }
 
-/* BOTÓN CONTINUAR */
+/* BOTONES DE ACCIÓN */
+.action-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  margin-top: 20px;
+}
+
+.btn-regresar,
 .btn-continuar {
-  background-color: #7a8088;
-  color: white;
+  padding: 16px 40px;
   border: none;
   border-radius: 15px;
-  padding: 16px 40px;
   font-family: "Patrick Hand", cursive;
   font-size: 20px;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s ease;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  align-self: center;
-  min-width: 200px;
+  min-width: 180px;
 }
 
-.btn-continuar:hover {
+.btn-regresar {
+  background-color: rgba(255, 255, 255, 0.9);
+  color: #2c2c2c;
+}
+
+.btn-regresar:hover {
+  background-color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.2);
+}
+
+.btn-continuar {
+  background-color: #7a8088;
+  color: white;
+}
+
+.btn-continuar:hover:not(:disabled) {
   background-color: #6a7078;
   transform: translateY(-2px);
   box-shadow: 0 6px 18px rgba(0, 0, 0, 0.2);
+}
+
+.btn-continuar:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 /* RESPONSIVE */
@@ -335,19 +344,20 @@ function continuarPaso2() {
   }
 
   .section-title {
-    font-size: 28px;
+    font-size: 32px;
   }
 
-  .input-field {
-    font-size: 16px;
-    padding: 15px 20px;
+  .criterio-btn {
+    font-size: 18px;
+    padding: 18px 30px;
   }
 
-  .familiar-btn {
-    font-size: 16px;
-    padding: 14px 20px;
+  .action-buttons {
+    flex-direction: column;
+    gap: 15px;
   }
 
+  .btn-regresar,
   .btn-continuar {
     width: 100%;
     font-size: 18px;
@@ -373,11 +383,12 @@ function continuarPaso2() {
   }
 
   .section-title {
-    font-size: 24px;
+    font-size: 28px;
   }
 
-  .input-field {
-    font-size: 15px;
+  .criterio-btn {
+    font-size: 16px;
+    padding: 16px 25px;
   }
 }
 </style>

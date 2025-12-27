@@ -1,23 +1,5 @@
 <template>
   <div class="perfil-page">
-    <!-- HEADER ÚNICO -->
-    <header class="header">
-      <div class="logo">
-        <img src="./logo.png" alt="Tópico" class="logo-img" />
-        <div class="logo-text">
-          <span class="logo-title">Tópico</span>
-          <span class="logo-subtitle">Los Ángeles</span>
-        </div>
-      </div>
-      <nav class="nav">
-        <a href="#" class="nav-link" @click.prevent="goToInicio">Inicio</a>
-        <a href="#" class="nav-link" @click.prevent="goToContacto"
-          >Contáctanos</a
-        >
-        <a href="#" class="nav-link active">Mi perfil</a>
-      </nav>
-    </header>
-
     <!-- CONTENIDO PRINCIPAL -->
     <main class="main-content">
       <h1 class="title">¡Bienvenido {{ nombreUsuario }}!</h1>
@@ -83,7 +65,7 @@
             <div class="accordion-header" @click="toggleCitasPresenciales">
               <span>Citas Presenciales Programadas</span>
               <span class="arrow" :class="{ open: showCitasPresenciales }"
-                >▼</span
+                >˅</span
               >
             </div>
             <transition name="slide">
@@ -113,7 +95,7 @@
           <div class="section-accordion">
             <div class="accordion-header" @click="toggleHistorial">
               <span>Historial de Citas Presenciales</span>
-              <span class="arrow" :class="{ open: showHistorial }">▼</span>
+              <span class="arrow" :class="{ open: showHistorial }">˅</span>
             </div>
             <transition name="slide">
               <div v-if="showHistorial" class="accordion-content">

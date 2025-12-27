@@ -12,27 +12,21 @@
 
       <!-- Links de navegación -->
       <nav class="navbar-links">
-        <router-link class="nav-item" :to="{ name: 'Inicio' }">
-          Nosotros
-        </router-link>
-        <button class="btn-reserva" @click="irAReservar">
-          Reserva de Cita
-        </button>
+        <router-link class="nav-item" :to="{ name: 'Inicio' }"
+          >Inicio</router-link
+        >
+        <router-link class="nav-item" :to="{ name: 'Contacto' }"
+          >Contactanos</router-link
+        >
+        <router-link class="nav-item" :to="{ name: 'MiPerfil' }"
+          >Mi perfil</router-link
+        >
       </nav>
     </div>
   </header>
 </template>
 
-<script setup lang="ts">
-import { useRouter } from 'vue-router';
-
-const router = useRouter();
-
-function irAReservar() {
-  // Ir siempre a la pantalla de Bienvenida al Portal
-  router.push({ name: 'Bienvenida' });
-}
-</script>
+<script setup lang="ts"></script>
 
 <style scoped>
 @import url("https://fonts.googleapis.com/css2?family=Caveat:wght@400;700&display=swap");
@@ -132,27 +126,6 @@ function irAReservar() {
   width: 100%;
 }
 
-/* BOTÓN RESERVA DE CITA */
-.btn-reserva {
-  background-color: #5bc9ab;
-  color: #2c2c2c;
-  border: none;
-  border-radius: 15px;
-  padding: 14px 35px;
-  font-family: "Caveat", cursive;
-  font-size: 24px;
-  font-weight: 700;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-}
-
-.btn-reserva:hover {
-  background-color: #4ab89a;
-  transform: translateY(-2px);
-  box-shadow: 0 6px 18px rgba(91, 201, 171, 0.4);
-}
-
 @media (max-width: 968px) {
   .navbar-content {
     flex-direction: column;
@@ -168,11 +141,6 @@ function irAReservar() {
 
   .nav-item {
     font-size: 24px;
-  }
-
-  .btn-reserva {
-    font-size: 20px;
-    padding: 12px 30px;
   }
 }
 
@@ -196,11 +164,6 @@ function irAReservar() {
 
   .nav-item {
     font-size: 22px;
-  }
-
-  .btn-reserva {
-    width: 100%;
-    font-size: 18px;
   }
 }
 </style>
