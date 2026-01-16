@@ -3,8 +3,7 @@
     <main class="main-content">
       <h1 class="title">Reservar Cita</h1>
       <p class="subtitle">
-        Selecciona con qué tipo de seguro cuentas, en cuál de nuestras sedes y
-        en qué especialidad deseas atenderte.
+        Selecciona con qué tipo de seguro cuentas y en qué especialidad deseas atenderte.
       </p>
 
       <!-- STEPPER / PROGRESS BAR -->
@@ -35,8 +34,25 @@
         <p>Paso 2: Seleccione Especialidad</p>
       </div>
 
+      <!-- INFORMACIÓN DEL PACIENTE -->
+      <div v-if="pacienteSeleccionado" class="paciente-info">
+        <p>
+          <strong>Paciente:</strong> 
+          {{ pacienteSeleccionado.nombres }} 
+          {{ pacienteSeleccionado.apellido_paterno }} 
+          {{ pacienteSeleccionado.apellido_materno }}
+          <span class="badge">{{ pacienteSeleccionado.tipo === 'titular' ? 'Titular' : 'Familiar' }}</span>
+        </p>
+      </div>
+
+      <!-- LOADING SPINNER -->
+      <div v-if="cargando" class="loading-container">
+        <div class="spinner"></div>
+        <p>Cargando especialidades...</p>
+      </div>
+
       <!-- FORMULARIO -->
-      <div class="form-container">
+      <div v-else class="form-container">
         <!-- ¿CUENTA CON SEGURO? -->
         <div class="section">
           <h2 class="section-title">¿Cuenta con seguro?</h2>
@@ -66,12 +82,13 @@
           <div class="select-container">
             <select v-model="especialidadSeleccionada" class="custom-select">
               <option value="" disabled>SELECCIONE</option>
-              <option value="medicina-general">Medicina General</option>
-              <option value="pediatria">Pediatría</option>
-              <option value="cardiologia">Cardiología</option>
-              <option value="dermatologia">Dermatología</option>
-              <option value="ginecologia">Ginecología</option>
-              <option value="traumatologia">Traumatología</option>
+              <option 
+                v-for="especialidad in especialidades" 
+                :key="especialidad.id"
+                :value="especialidad.id"
+              >
+                {{ especialidad.nombre }}
+              </option>
             </select>
             <span class="select-icon">🖤</span>
           </div>
@@ -94,19 +111,56 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from "vue";
+import { ref, computed, onMounted } from "vue";
 import { useRouter } from "vue-router";
+import { especialidadService } from "../../services/especialidadService";
 
 const router = useRouter();
 
 // Estados del formulario
+const cargando = ref(true);
 const tieneSeguro = ref<boolean | null>(null);
 const especialidadSeleccionada = ref("");
+const especialidades = ref<any[]>([]);
+const pacienteSeleccionado = ref<any>(null);
 
 // Computed para habilitar el botón continuar
 const puedeContinuar = computed(() => {
   return tieneSeguro.value !== null && especialidadSeleccionada.value !== "";
 });
+
+async function cargarDatos() {
+  try {
+    cargando.value = true;
+
+    // Recuperar el paciente seleccionado del paso anterior
+    const pacienteStr = sessionStorage.getItem("pacienteSeleccionado");
+    if (pacienteStr) {
+      pacienteSeleccionado.value = JSON.parse(pacienteStr);
+      console.log("Paciente recuperado:", pacienteSeleccionado.value);
+    } else {
+      alert("No se encontró información del paciente. Regresando al paso 1...");
+      router.push({ name: "ReservarCita" });
+      return;
+    }
+
+    // Cargar especialidades
+    const { data, error } = await especialidadService.obtenerEspecialidades();
+    
+    if (error) {
+      console.error("Error al cargar especialidades:", error);
+      alert("Error al cargar especialidades: " + error);
+    } else {
+      especialidades.value = data || [];
+      console.log("Especialidades cargadas:", especialidades.value);
+    }
+  } catch (error) {
+    console.error("Error al cargar datos:", error);
+    alert("Error al cargar la información");
+  } finally {
+    cargando.value = false;
+  }
+}
 
 function regresarPaso1() {
   router.push({ name: "ReservarCita" });
@@ -118,15 +172,24 @@ function continuarPaso3() {
     return;
   }
 
-  console.log("Datos del Paso 2:", {
+  const datosPaso2 = {
     tieneSeguro: tieneSeguro.value,
-    especialidad: especialidadSeleccionada.value,
-  });
+    idEspecialidad: especialidadSeleccionada.value,
+    nombreEspecialidad: especialidades.value.find(e => e.id === parseInt(especialidadSeleccionada.value))?.nombre
+  };
 
-  // Aquí irías al paso 3
+  console.log("Datos del Paso 2:", datosPaso2);
+
+  // Guardar los datos del paso 2
+  sessionStorage.setItem("datosPaso2", JSON.stringify(datosPaso2));
+
+  // Ir al paso 3
   router.push({ name: "ReservarCitaPaso3" });
-  alert("Ir al Paso 3");
 }
+
+onMounted(() => {
+  cargarDatos();
+});
 </script>
 
 <style scoped>
@@ -168,6 +231,67 @@ function continuarPaso3() {
   max-width: 900px;
   margin-left: auto;
   margin-right: auto;
+}
+
+/* INFORMACIÓN DEL PACIENTE */
+.paciente-info {
+  background-color: rgba(91, 201, 171, 0.15);
+  border: 2px solid #5bc9ab;
+  border-radius: 15px;
+  padding: 15px 25px;
+  margin: 0 auto 30px;
+  max-width: 950px;
+  text-align: center;
+}
+
+.paciente-info p {
+  font-family: "Patrick Hand", cursive;
+  font-size: 18px;
+  color: #2c2c2c;
+  margin: 0;
+}
+
+.paciente-info strong {
+  font-weight: 700;
+}
+
+.badge {
+  display: inline-block;
+  background-color: #5bc9ab;
+  color: white;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  margin-left: 10px;
+}
+
+/* LOADING */
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  padding: 60px 20px;
+}
+
+.spinner {
+  width: 50px;
+  height: 50px;
+  border: 5px solid rgba(91, 201, 171, 0.3);
+  border-top-color: #5bc9ab;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.loading-container p {
+  font-family: "Patrick Hand", cursive;
+  font-size: 18px;
+  color: #2c2c2c;
 }
 
 /* STEPPER */
@@ -401,10 +525,6 @@ function continuarPaso3() {
     padding: 35px 25px;
   }
 
-  .stepper {
-    gap: 0;
-  }
-
   .step-circle {
     width: 30px;
     height: 30px;
@@ -419,6 +539,15 @@ function continuarPaso3() {
     margin-left: 0;
     width: 100%;
     text-align: center;
+  }
+
+  .paciente-info p {
+    font-size: 16px;
+  }
+
+  .badge {
+    font-size: 12px;
+    padding: 3px 10px;
   }
 
   .seguro-buttons {

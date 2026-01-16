@@ -1,14 +1,15 @@
 import { createClient } from "@supabase/supabase-js";
 
-// ⚠️ REEMPLAZA CON TUS CREDENCIALES
-const supabaseUrl = "https://akhnxjzatjuinldknzn.supabase.co";
-const supabaseAnonKey = "sb_publishable_ltaNA7nnVozoSCOcZIjg";
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+if (!supabaseUrl || !supabaseAnonKey) {
+  throw new Error(
+    "❌ Error: Faltan las credenciales de Supabase en el archivo .env"
+  );
+}
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
-
-// ============================================
-// INTERFACES BASADAS EN TU BASE DE DATOS
-// ============================================
 
 export interface Usuario {
   id?: number;

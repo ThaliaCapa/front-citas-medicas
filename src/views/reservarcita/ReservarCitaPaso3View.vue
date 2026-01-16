@@ -97,7 +97,7 @@ function continuarPaso4() {
 
   // Aquí irías al paso 4
   router.push({ name: "ReservarCitaPaso4" });
-  alert(`Ir al Paso 4 - Búsqueda por ${criterioBusqueda.value}`);
+  //alert(`Ir al Paso 4 - Búsqueda por ${criterioBusqueda.value}`);
 }
 </script>
 

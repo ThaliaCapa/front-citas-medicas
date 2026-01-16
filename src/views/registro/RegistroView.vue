@@ -225,7 +225,9 @@
         </div>
 
         <!-- BOTÓN REGISTRAR -->
-        <button type="submit" class="btn-registrar">Registrar</button>
+        <button type="submit" class="btn-registrar" :disabled="loading">
+          {{ loading ? "Registrando..." : "Registrar" }}
+        </button>
       </form>
     </div>
   </div>
@@ -234,11 +236,14 @@
 <script setup lang="ts">
 import { ref, reactive } from "vue";
 import { useRouter } from "vue-router";
+import { authService } from "../../services/authService";
+import { personaService } from "../../services/personaService";
 
 const router = useRouter();
 
 const showPassword = ref(false);
 const showConfirmPassword = ref(false);
+const loading = ref(false);
 
 const formData = reactive({
   tipoDocumento: "",
@@ -260,7 +265,7 @@ function goBack() {
   router.push("/reservar-cita");
 }
 
-function handleRegistro() {
+async function handleRegistro() {
   // Validar que las contraseñas coincidan
   if (formData.password !== formData.confirmPassword) {
     alert("Las contraseñas no coinciden");
@@ -273,8 +278,81 @@ function handleRegistro() {
     return;
   }
 
-  alert(`Registro exitoso para: ${formData.nombres}`);
-  console.log("Datos del registro:", formData);
+  // Validar contraseña mínima
+  if (formData.password.length < 6) {
+    alert("La contraseña debe tener al menos 6 caracteres");
+    return;
+  }
+
+  loading.value = true;
+
+  try {
+    // PASO 1: Registrar usuario en tabla 'usuarios'
+    console.log("Registrando usuario...");
+    const { data: usuario, error: errorUsuario } = await authService.registrar(
+      formData.correo,
+      formData.password
+    );
+
+    if (errorUsuario) {
+      console.error("Error al registrar usuario:", errorUsuario);
+
+      if (
+        errorUsuario.includes("duplicate") ||
+        errorUsuario.includes("unique")
+      ) {
+        alert("Este correo ya está registrado");
+      } else {
+        alert("Error al registrar: " + errorUsuario);
+      }
+
+      loading.value = false;
+      return;
+    }
+
+    console.log("Usuario creado exitosamente:", usuario);
+
+    // PASO 2: Crear perfil de persona asociado al usuario
+    console.log("Creando perfil de persona...");
+
+    // Mapear idTipoDocumento correctamente
+    let idTipoDocumento = 1; // DNI por defecto
+    if (formData.tipoDocumento === "carnet") idTipoDocumento = 2;
+    if (formData.tipoDocumento === "pasaporte") idTipoDocumento = 3;
+
+    const { data: persona, error: errorPersona } =
+      await personaService.crearPersona({
+        numero_documento: parseInt(formData.numeroDocumento),
+        apellido_paterno: formData.apellidoPaterno,
+        apellido_materno: formData.apellidoMaterno,
+        nombres: formData.nombres,
+        fecha_nacimiento: formData.fechaNacimiento,
+        telefono: formData.celular,
+        genero: formData.genero,
+        sede: formData.sede,
+        idUsuario: usuario?.id,
+        idRol: 5,
+        idTipoDocumento: idTipoDocumento,
+      });
+
+    if (errorPersona) {
+      console.error("Error al crear persona:", errorPersona);
+      alert(
+        "Usuario creado pero hubo un error al crear el perfil. Por favor contacta a soporte."
+      );
+    } else {
+      console.log("Persona creada exitosamente:", persona);
+    }
+
+    loading.value = false;
+    alert("¡Registro exitoso! Ahora puedes iniciar sesión");
+
+    router.push({ name: "Ingresar" });
+  } catch (error) {
+    console.error("Error inesperado:", error);
+    alert("Ocurrió un error inesperado. Por favor intenta nuevamente.");
+    loading.value = false;
+  }
 }
 </script>
 
@@ -309,7 +387,6 @@ function handleRegistro() {
   z-index: 0;
 }
 
-/* ENCABEZADO CON BOTÓN Y TÍTULO */
 .header-container {
   display: flex;
   align-items: center;
@@ -318,7 +395,6 @@ function handleRegistro() {
   justify-content: center;
 }
 
-/* BOTÓN VOLVER ATRÁS INTERNO */
 .btn-volver-interno {
   background-color: #4dd0b8;
   border: none;
@@ -339,7 +415,6 @@ function handleRegistro() {
   transform: translateY(-1px);
 }
 
-/* TARJETA */
 .registro-card {
   background: rgba(220, 225, 230, 0.96);
   border-radius: 0;
@@ -355,7 +430,6 @@ function handleRegistro() {
   flex-direction: column;
 }
 
-/* Scrollbar personalizado */
 .registro-card::-webkit-scrollbar {
   width: 6px;
 }
@@ -387,7 +461,6 @@ function handleRegistro() {
   line-height: 1.4;
 }
 
-/* FORMULARIO */
 form {
   display: flex;
   flex-direction: column;
@@ -451,7 +524,6 @@ select {
   padding-right: 32px;
 }
 
-/* PASSWORD */
 .password-container {
   position: relative;
 }
@@ -473,7 +545,6 @@ select {
   color: #4dd0b8;
 }
 
-/* RADIO BUTTONS INLINE */
 .radio-group-inline {
   display: flex;
   gap: 20px;
@@ -497,7 +568,6 @@ select {
   accent-color: #4dd0b8;
 }
 
-/* CHECKBOX */
 .checkbox-group {
   display: flex;
   align-items: center;
@@ -519,7 +589,6 @@ select {
   color: #000;
 }
 
-/* BOTÓN REGISTRAR */
 .btn-registrar {
   width: auto;
   padding: 10px 24px;
@@ -536,12 +605,16 @@ select {
   align-self: flex-start;
 }
 
-.btn-registrarse:hover {
+.btn-registrar:hover:not(:disabled) {
   background-color: #5a6169;
   transform: translateY(-1px);
 }
 
-/* RESPONSIVE */
+.btn-registrar:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 @media (max-width: 1024px) {
   .registro-page {
     grid-template-columns: 1fr;

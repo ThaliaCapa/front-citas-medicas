@@ -1,40 +1,45 @@
-import { supabase, type Persona } from "../lib/supabaseClient";
-import { authService } from "./authService";
+import { supabase } from "../lib/supabaseClient";
 
 export const personaService = {
-  // Crear perfil de persona/paciente
-  async crearPersona(
-    personaData: Omit<Persona, "id" | "fechaCreacion" | "fechaModificacion">
-  ) {
+  async crearPersona(personaData: any) {
     try {
-      const usuario = authService.getUsuarioActual();
-      if (!usuario) throw new Error("Usuario no autenticado");
-
+      console.log("📤 Datos originales recibidos:", personaData);
+      
+      // Convertir TODOS los nombres de columnas a minúsculas
+      const datosLimpios: any = {};
+      
+      for (const [key, value] of Object.entries(personaData)) {
+        const keyMinuscula = key.toLowerCase();
+        datosLimpios[keyMinuscula] = value;
+      }
+      
+      console.log("✅ Datos convertidos a minúsculas:", datosLimpios);
+      
       const { data, error } = await supabase
         .from("persona")
-        .insert([
-          {
-            ...personaData,
-            idUsuarioCreacion: usuario.id,
-          },
-        ])
+        .insert([datosLimpios])
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error("❌ Error de Supabase:", error);
+        throw error;
+      }
+      
+      console.log("✅ Persona creada exitosamente:", data);
       return { data, error: null };
     } catch (error: any) {
+      console.error("❌ Error en crearPersona:", error);
       return { data: null, error: error.message };
     }
   },
 
-  // Obtener persona por ID de usuario
   async obtenerPersonaPorUsuario(idUsuario: number) {
     try {
       const { data, error } = await supabase
         .from("persona")
         .select("*")
-        .eq("idUsuario", idUsuario)
+        .eq("idusuario", idUsuario)
         .single();
 
       if (error) throw error;
@@ -44,19 +49,11 @@ export const personaService = {
     }
   },
 
-  // Actualizar persona
-  async actualizarPersona(id: number, personaData: Partial<Persona>) {
+  async actualizarPersona(id: number, personaData: any) {
     try {
-      const usuario = authService.getUsuarioActual();
-      if (!usuario) throw new Error("Usuario no autenticado");
-
       const { data, error } = await supabase
         .from("persona")
-        .update({
-          ...personaData,
-          idUsuarioModificacion: usuario.id,
-          fechaModificacion: new Date().toISOString(),
-        })
+        .update(personaData)
         .eq("id", id)
         .select()
         .single();

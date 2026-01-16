@@ -7,13 +7,15 @@ import MainLayaout from "../layouts/MainLayaout.vue";
 import SessionLayaout from "../layouts/SessionLayaout.vue";
 import RecuperarPasswordView from "../views/ingresar/RecuperarPasswordView.vue";
 import BienvenidaIngresar from "../views/ingresar/BienvenidaIngresar.vue";
-import MiPerfilView from "../views/perfil/MiPerfilView.vue";
 import ContactoView from "../views/contacto/ContactoView.vue";
 import ReservarCitaPaso2View from "../views/reservarcita/ReservarCitaPaso2View.vue";
 import ReservarCitaPaso3View from "../views/reservarcita/ReservarCitaPaso3View.vue";
 import ReservarCitaPaso4View from "../views/reservarcita/ReservarCitaPaso4View.vue";
 import ReservarCitaPaso5View from "../views/reservarcita/ReservarCitaPaso5View.vue";
 import BienvenidaPortalView from "../views/ingresar/BienvenidaPortalView.vue";
+import MiPerfilView from "../views/ingresar/MiPerfilView.vue";
+
+
 
 const routes = [
   // RUTAS PRINCIPALES CON NAVBAR (Inicio, Contacto, Mi Perfil)
@@ -30,11 +32,6 @@ const routes = [
         path: "contacto",
         name: "Contacto",
         component: ContactoView,
-      },
-      {
-        path: "mi-perfil",
-        name: "MiPerfil",
-        component: MiPerfilView,
       },
     ],
   },
@@ -92,6 +89,11 @@ const routes = [
         path: "registro",
         name: "Registro",
         component: RegistroView,
+      },
+      {
+        path: "editar-perfil",
+        name: "EditarPerfil",
+        component:MiPerfilView,
       },
     ],
   },

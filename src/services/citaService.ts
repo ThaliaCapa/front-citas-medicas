@@ -1,128 +1,62 @@
-import { supabase, type Cita } from "../lib/supabaseClient";
-import { authService } from "./authService";
+import { supabase } from "../lib/supabaseClient";
 
 export const citaService = {
-  // Crear cita
-  async crearCita(
-    citaData: Omit<Cita, "id" | "fechaCreacion" | "fechaModificacion">
-  ) {
-    try {
-      const usuario = authService.getUsuarioActual();
-      if (!usuario) throw new Error("Usuario no autenticado");
-
-      const { data, error } = await supabase
-        .from("cita")
-        .insert([
-          {
-            ...citaData,
-            estado: 1,
-            idUsuarioCreacion: usuario.id,
-          },
-        ])
-        .select()
-        .single();
-
-      if (error) throw error;
-      return { data, error: null };
-    } catch (error: any) {
-      return { data: null, error: error.message };
-    }
-  },
-
-  // Obtener citas de un paciente
-  async obtenerCitasPaciente(idPaciente: number) {
-    try {
-      const { data, error } = await supabase
-        .from("cita")
-        .select(
-          `
-          *,
-          doctor:idDoctor(nombres, apellido_paterno, apellido_materno),
-          horario:idHorario(*)
-        `
-        )
-        .eq("idPaciente", idPaciente)
-        .eq("estado", 1)
-        .order("fecha", { ascending: true });
-
-      if (error) throw error;
-      return { data, error: null };
-    } catch (error: any) {
-      return { data: null, error: error.message };
-    }
-  },
-
-  // Obtener citas programadas (futuras)
+  // Obtener citas programadas de un paciente
   async obtenerCitasProgramadas(idPaciente: number) {
     try {
-      const hoy = new Date().toISOString().split("T")[0];
-
+      const hoy = new Date().toISOString().split('T')[0];
+      
       const { data, error } = await supabase
         .from("cita")
-        .select(
-          `
+        .select(`
           *,
-          doctor:idDoctor(nombres, apellido_paterno, apellido_materno),
-          horario:idHorario(*)
-        `
-        )
+          doctor:persona!cita_idDoctor_fkey(nombres, apellido_paterno, apellido_materno)
+        `)
         .eq("idPaciente", idPaciente)
         .eq("estado", 1)
         .gte("fecha", hoy)
-        .order("fecha", { ascending: true });
+        .order("fecha", { ascending: true })
+        .order("hora", { ascending: true });
 
-      if (error) throw error;
+      if (error) {
+        console.error("Error de Supabase al obtener citas:", error);
+        throw error;
+      }
+      
+      console.log("Citas programadas obtenidas:", data);
       return { data, error: null };
     } catch (error: any) {
+      console.error("Error al obtener citas programadas:", error);
       return { data: null, error: error.message };
     }
   },
 
-  // Obtener historial de citas (pasadas)
+  // Obtener historial de citas de un paciente
   async obtenerHistorialCitas(idPaciente: number) {
     try {
-      const hoy = new Date().toISOString().split("T")[0];
-
+      const hoy = new Date().toISOString().split('T')[0];
+      
       const { data, error } = await supabase
         .from("cita")
-        .select(
-          `
+        .select(`
           *,
-          doctor:idDoctor(nombres, apellido_paterno, apellido_materno),
-          horario:idHorario(*)
-        `
-        )
+          doctor:persona!cita_idDoctor_fkey(nombres, apellido_paterno, apellido_materno)
+        `)
         .eq("idPaciente", idPaciente)
         .lt("fecha", hoy)
-        .order("fecha", { ascending: false });
+        .order("fecha", { ascending: false })
+        .order("hora", { ascending: false })
+        .limit(10);
 
-      if (error) throw error;
+      if (error) {
+        console.error("Error de Supabase al obtener historial:", error);
+        throw error;
+      }
+      
+      console.log("Historial de citas obtenido:", data);
       return { data, error: null };
     } catch (error: any) {
-      return { data: null, error: error.message };
-    }
-  },
-
-  // Cancelar cita
-  async cancelarCita(idCita: number) {
-    try {
-      const usuario = authService.getUsuarioActual();
-      if (!usuario) throw new Error("Usuario no autenticado");
-
-      const { data, error } = await supabase
-        .from("cita")
-        .update({
-          estado: 0,
-          idUsuarioModificacion: usuario.id,
-          fechaModificacion: new Date().toISOString(),
-        })
-        .eq("id", idCita)
-        .select()
-        .single();
-
-      if (error) throw error;
-      return { data, error: null };
-    } catch (error: any) {
+      console.error("Error al obtener historial:", error);
       return { data: null, error: error.message };
     }
   },

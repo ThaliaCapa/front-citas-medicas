@@ -88,9 +88,9 @@
           <button
             type="submit"
             class="btn-ingresar"
-            :disabled="!recaptchaChecked"
+            :disabled="!recaptchaChecked || loading"
           >
-            Ingresar
+            {{ loading ? "Ingresando..." : "Ingresar" }}
           </button>
         </form>
       </div>
@@ -101,6 +101,7 @@
 <script setup lang="ts">
 import { ref } from "vue";
 import { useRouter } from "vue-router";
+import { authService } from "../../services/authService";
 
 const router = useRouter();
 
@@ -109,6 +110,7 @@ const numeroDocumento = ref("");
 const password = ref("");
 const mostrarPassword = ref(false);
 const recaptchaChecked = ref(false);
+const loading = ref(false);
 
 function irAInicio() {
   router.push({ name: "Inicio" });
@@ -118,7 +120,7 @@ function irARecuperarPassword() {
   router.push({ name: "RecuperarPassword" });
 }
 
-function handleLogin() {
+async function handleLogin() {
   if (!recaptchaChecked.value) {
     alert("Por favor, completa el reCAPTCHA");
     return;
@@ -129,12 +131,32 @@ function handleLogin() {
     return;
   }
 
-  console.log("Login exitoso:", {
-    tipo: tipoDocumento.value,
-    documento: numeroDocumento.value,
-  });
+  loading.value = true;
 
-  router.push({ name: "BienvenidaIngresar" });
+  try {
+    console.log("Intentando iniciar sesión con documento:", numeroDocumento.value);
+
+    const { data, error } = await authService.login(
+      numeroDocumento.value,
+      password.value
+    );
+
+    if (error) {
+      console.error("Error al iniciar sesión:", error);
+      alert("Credenciales incorrectas. Por favor verifica tus datos.");
+      loading.value = false;
+      return;
+    }
+
+    console.log("Login exitoso:", data);
+    //alert("¡Bienvenido!");
+
+    router.push({ name: "BienvenidaIngresar" });
+  } catch (error) {
+    console.error("Error inesperado:", error);
+    alert("Ocurrió un error inesperado. Por favor intenta nuevamente.");
+    loading.value = false;
+  }
 }
 </script>
 

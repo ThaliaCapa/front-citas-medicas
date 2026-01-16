@@ -124,63 +124,71 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive } from "vue";
+import { ref, reactive, onMounted } from "vue";
 import { useRouter } from "vue-router";
+import { authService } from "../../services/authService";
 
 const router = useRouter();
 
-// Nombre del usuario (obtenido del sistema de autenticación)
-const nombreUsuario = ref("Juan Pérez");
+const nombreUsuario = ref("Usuario");
 
 const userPhoto = ref("");
 const userData = reactive({
-  sexo: "Masculino",
-  edad: "18",
-  peso: "45 kg",
-  altura: "1.58 m",
-  grupoSanguineo: "O+",
+  sexo: "Cargando...",
+  edad: "Cargando...",
+  peso: "Cargando...",
+  altura: "Cargando...",
+  grupoSanguineo: "Cargando...",
 });
 
-// Estados de los desplegables
 const showCitasPresenciales = ref(false);
 const showHistorial = ref(false);
 
-// Datos de ejemplo
-const citasPresenciales = ref([
-  {
-    id: 1,
-    fecha: "15/12/2024",
-    hora: "10:00 AM",
-    especialidad: "Medicina General",
-    doctor: "Dr. García López",
-  },
-  {
-    id: 2,
-    fecha: "20/12/2024",
-    hora: "3:00 PM",
-    especialidad: "Cardiología",
-    doctor: "Dra. María Fernández",
-  },
-]);
+const citasPresenciales = ref([]);
 
-const historialCitas = ref([
-  {
-    id: 1,
-    fecha: "10/11/2024",
-    hora: "9:00 AM",
-    especialidad: "Medicina General",
-    doctor: "Dr. García López",
-    estado: "Completada",
-  },
-  {
-    id: 2,
-    fecha: "05/10/2024",
-    hora: "2:00 PM",
-    especialidad: "Dermatología",
-    doctor: "Dr. Carlos Ruiz",
-    estado: "Completada",
-  },
-]);
+const historialCitas = ref([]);
+
+onMounted(() => {
+  cargarDatosUsuario();
+});
+
+function cargarDatosUsuario() {
+  const usuarioActual = authService.getUsuarioActual();
+  
+  if (!usuarioActual) {
+    router.push({ name: "Ingresar" });
+    return;
+  }
+
+  console.log("Usuario actual:", usuarioActual);
+
+  if (usuarioActual.persona) {
+    const persona = usuarioActual.persona;
+    
+    nombreUsuario.value = `${persona.nombres} ${persona.apellido_paterno}`;
+    
+    userData.sexo = persona.genero || "No especificado";
+    
+    if (persona.fecha_nacimiento) {
+      const hoy = new Date();
+      const nacimiento = new Date(persona.fecha_nacimiento);
+      let edad = hoy.getFullYear() - nacimiento.getFullYear();
+      const mes = hoy.getMonth() - nacimiento.getMonth();
+      if (mes < 0 || (mes === 0 && hoy.getDate() < nacimiento.getDate())) {
+        edad--;
+      }
+      userData.edad = edad.toString();
+    } else {
+      userData.edad = "No especificado";
+    }
+    
+    userData.peso = persona.peso || "No especificado";
+    userData.altura = persona.altura || "No especificado";
+    userData.grupoSanguineo = persona.grupo_sanguineo || "No especificado";
+  } else {
+    nombreUsuario.value = "Usuario";
+  }
+}
 
 function goToInicio() {
   router.push("/");
@@ -191,8 +199,7 @@ function goToContacto() {
 }
 
 function editarPerfil() {
-  console.log("Editar perfil");
-  // Aquí iría la lógica para editar el perfil
+  router.push({ name: "EditarPerfil" });
 }
 
 function reservarCita() {
@@ -222,7 +229,6 @@ function toggleHistorial() {
   background-color: #b8bdc4;
 }
 
-/* HEADER ÚNICO */
 .header {
   background-color: #e8eaed;
   padding: 20px 50px;
@@ -305,7 +311,6 @@ function toggleHistorial() {
   border-radius: 2px;
 }
 
-/* CONTENIDO PRINCIPAL */
 .main-content {
   padding: 50px 60px;
   max-width: 1400px;
@@ -338,7 +343,6 @@ function toggleHistorial() {
   margin: 0 auto;
 }
 
-/* SECCIÓN DE PERFIL */
 .perfil-section {
   display: flex;
   flex-direction: column;
@@ -416,7 +420,6 @@ function toggleHistorial() {
   color: #4ab89a;
 }
 
-/* BOTÓN RESERVAR */
 .btn-reservar {
   background-color: #5bc9ab;
   color: #2c2c2c;
@@ -438,7 +441,6 @@ function toggleHistorial() {
   box-shadow: 0 6px 18px rgba(0, 0, 0, 0.2);
 }
 
-/* CAMPOS DE INFORMACIÓN */
 .info-fields {
   display: flex;
   flex-direction: column;
@@ -476,7 +478,6 @@ function toggleHistorial() {
   color: #2c2c2c;
 }
 
-/* ACORDEONES DESPLEGABLES */
 .section-accordion {
   background-color: #5bc9ab;
   border-radius: 12px;
@@ -565,7 +566,6 @@ function toggleHistorial() {
   color: #5bc9ab;
 }
 
-/* ANIMACIÓN DE SLIDE */
 .slide-enter-active {
   transition: all 0.4s ease;
 }
@@ -588,7 +588,6 @@ function toggleHistorial() {
   padding-bottom: 0;
 }
 
-/* RESPONSIVE */
 @media (max-width: 1024px) {
   .profile-header {
     flex-direction: column;

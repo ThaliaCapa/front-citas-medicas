@@ -24,24 +24,53 @@ export const authService = {
     }
   },
 
-  // Iniciar sesión
-  async login(correo: string, contrasena: string) {
+  // Iniciar sesión con NÚMERO DE DOCUMENTO
+  async login(numeroDocumento: string, contrasena: string) {
     try {
-      const { data, error } = await supabase
+      console.log("Buscando persona con documento:", numeroDocumento);
+
+      // PASO 1: Buscar la persona por número de documento
+      const { data: persona, error: errorPersona } = await supabase
+        .from("persona")
+        .select("*")
+        .eq("numero_documento", parseInt(numeroDocumento))
+        .single();
+
+      if (errorPersona || !persona) {
+        console.error("Persona no encontrada:", errorPersona);
+        throw new Error("Número de documento no encontrado");
+      }
+
+      console.log("Persona encontrada:", persona);
+
+      // PASO 2: Buscar el usuario asociado y validar contraseña
+      const { data: usuario, error: errorUsuario } = await supabase
         .from("usuarios")
         .select("*")
-        .eq("correo", correo)
+        .eq("id", persona.idusuario)
         .eq("contrasena", contrasena)
         .eq("estado", 1)
         .single();
 
-      if (error) throw error;
-      if (!data) throw new Error("Credenciales incorrectas");
+      if (errorUsuario || !usuario) {
+        console.error(
+          "Usuario no encontrado o contraseña incorrecta:",
+          errorUsuario
+        );
+        throw new Error("Contraseña incorrecta");
+      }
 
-      // Guardar sesión
-      localStorage.setItem("usuario", JSON.stringify(data));
+      console.log("Usuario encontrado:", usuario);
 
-      return { data, error: null };
+      // PASO 3: Guardar sesión con datos completos
+      const usuarioCompleto = {
+        ...usuario,
+        persona: persona,
+      };
+
+      localStorage.setItem("usuario", JSON.stringify(usuarioCompleto));
+
+      return { data: usuarioCompleto, error: null };
     } catch (error: any) {
       console.error("Error al iniciar sesión:", error);
       return { data: null, error: error.message || "Credenciales incorrectas" };
@@ -49,7 +78,7 @@ export const authService = {
   },
 
   // Obtener usuario actual
-  getUsuarioActual(): Usuario | null {
+  getUsuarioActual(): any | null {
     const usuarioStr = localStorage.getItem("usuario");
     return usuarioStr ? JSON.parse(usuarioStr) : null;
   },

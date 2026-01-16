@@ -3,10 +3,8 @@
     <div class="navbar-content">
       <!-- Logo -->
       <div class="navbar-logo">
-        <div class="logo-icon">🏥</div>
-        <div class="logo-text">
-          <span class="logo-main">Tópico</span>
-          <span class="logo-subtitle">Los Ángeles</span>
+        <div class="logo-icon">
+          <img src="/src/assets/logo.png" alt="" />
         </div>
       </div>
 
@@ -24,13 +22,13 @@
 </template>
 
 <script setup lang="ts">
-import { useRouter } from 'vue-router';
+import { useRouter } from "vue-router";
 
 const router = useRouter();
 
 function irAReservar() {
   // Ir siempre a la pantalla de Bienvenida al Portal
-  router.push({ name: 'Bienvenida' });
+  router.push({ name: "Bienvenida" });
 }
 </script>
 
@@ -53,39 +51,25 @@ function irAReservar() {
   margin: 0 auto;
 }
 
-.navbar-logo {
+.navar-logo {
   display: flex;
   align-items: center;
-  gap: 15px;
+  padding-top: 10px;
 }
 
 .logo-icon {
-  font-size: 55px;
-  width: 55px;
-  height: 55px;
+  width: 70px;
+  height: 70px;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
-.logo-text {
-  display: flex;
-  flex-direction: column;
-  line-height: 1.2;
-}
-
-.logo-main {
-  font-family: Arial, sans-serif;
-  font-size: 22px;
-  font-weight: 600;
-  color: #2c2c2c;
-}
-
-.logo-subtitle {
-  font-family: Arial, sans-serif;
-  font-size: 11px;
-  color: #666;
-  font-weight: 400;
+.logo-icon img {
+  width: 200%;
+  height: 200%;
+  object-fit: contain;
+  transform: translateY(20px);
 }
 
 .navbar-links {
@@ -177,8 +161,9 @@ function irAReservar() {
 }
 
 @media (max-width: 480px) {
-  .logo-main {
-    font-size: 18px;
+  .logo-icon {
+    width: 55px;
+    height: 55px;
   }
 
   .logo-subtitle {
