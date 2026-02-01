@@ -34,18 +34,7 @@
         <p>Paso 2: Seleccione Especialidad</p>
       </div>
 
-      <!-- INFORMACIÓN DEL PACIENTE -->
-      <div v-if="pacienteSeleccionado" class="paciente-info">
-        <p>
-          <strong>Paciente:</strong> 
-          {{ pacienteSeleccionado.nombres }} 
-          {{ pacienteSeleccionado.apellido_paterno }} 
-          {{ pacienteSeleccionado.apellido_materno }}
-          <span class="badge">{{ pacienteSeleccionado.tipo === 'titular' ? 'Titular' : 'Familiar' }}</span>
-        </p>
-      </div>
-
-      <!-- LOADING SPINNER -->
+      <!-- LOADING -->
       <div v-if="cargando" class="loading-container">
         <div class="spinner"></div>
         <p>Cargando especialidades...</p>
@@ -71,6 +60,23 @@
             >
               NO ESTOY ASEGURADO
             </button>
+          </div>
+
+          <!-- DESPLEGABLE DE TIPOS DE SEGURO -->
+          <div v-if="tieneSeguro === true" class="select-container-seguro">
+            <label class="label-seguro">Selecciona tu tipo de seguro</label>
+            <select v-model="tipoSeguroSeleccionado" class="custom-select">
+              <option value="" disabled>SELECCIONE SU SEGURO</option>
+              <option value="essalud">EsSalud</option>
+              <option value="sis">SIS (Seguro Integral de Salud)</option>
+              <option value="pacifico">Pacífico Seguros</option>
+              <option value="rimac">Rímac Seguros</option>
+              <option value="mapfre">Mapfre</option>
+              <option value="la-positiva">La Positiva Seguros</option>
+              <option value="sanitas">Sanitas</option>
+              <option value="internacional">Internacional Seguros</option>
+              <option value="otro">Otro</option>
+            </select>
           </div>
         </div>
 
@@ -120,12 +126,18 @@ const router = useRouter();
 // Estados del formulario
 const cargando = ref(true);
 const tieneSeguro = ref<boolean | null>(null);
+const tipoSeguroSeleccionado = ref("");
 const especialidadSeleccionada = ref("");
 const especialidades = ref<any[]>([]);
 const pacienteSeleccionado = ref<any>(null);
 
 // Computed para habilitar el botón continuar
 const puedeContinuar = computed(() => {
+  // Si tiene seguro, debe seleccionar el tipo de seguro
+  if (tieneSeguro.value === true) {
+    return especialidadSeleccionada.value !== "" && tipoSeguroSeleccionado.value !== "";
+  }
+  // Si no tiene seguro, solo necesita seleccionar especialidad
   return tieneSeguro.value !== null && especialidadSeleccionada.value !== "";
 });
 
@@ -174,6 +186,7 @@ function continuarPaso3() {
 
   const datosPaso2 = {
     tieneSeguro: tieneSeguro.value,
+    tipoSeguro: tieneSeguro.value ? tipoSeguroSeleccionado.value : null,
     idEspecialidad: especialidadSeleccionada.value,
     nombreEspecialidad: especialidades.value.find(e => e.id === parseInt(especialidadSeleccionada.value))?.nombre
   };
@@ -233,39 +246,6 @@ onMounted(() => {
   margin-right: auto;
 }
 
-/* INFORMACIÓN DEL PACIENTE */
-.paciente-info {
-  background-color: rgba(91, 201, 171, 0.15);
-  border: 2px solid #5bc9ab;
-  border-radius: 15px;
-  padding: 15px 25px;
-  margin: 0 auto 30px;
-  max-width: 950px;
-  text-align: center;
-}
-
-.paciente-info p {
-  font-family: "Patrick Hand", cursive;
-  font-size: 18px;
-  color: #2c2c2c;
-  margin: 0;
-}
-
-.paciente-info strong {
-  font-weight: 700;
-}
-
-.badge {
-  display: inline-block;
-  background-color: #5bc9ab;
-  color: white;
-  padding: 4px 12px;
-  border-radius: 12px;
-  font-size: 14px;
-  font-weight: 600;
-  margin-left: 10px;
-}
-
 /* LOADING */
 .loading-container {
   display: flex;
@@ -285,7 +265,9 @@ onMounted(() => {
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .loading-container p {
@@ -426,6 +408,33 @@ onMounted(() => {
   box-shadow: 0 5px 15px rgba(91, 201, 171, 0.4);
 }
 
+/* DESPLEGABLE DE TIPOS DE SEGURO */
+.select-container-seguro {
+  margin-top: 15px;
+  animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.label-seguro {
+  font-family: "Patrick Hand", cursive;
+  font-size: 18px;
+  font-weight: 600;
+  color: #2c2c2c;
+  display: block;
+  margin-bottom: 10px;
+  text-align: center;
+}
+
 /* DIVIDER */
 .divider {
   width: 100%;
@@ -525,6 +534,10 @@ onMounted(() => {
     padding: 35px 25px;
   }
 
+  .stepper {
+    gap: 0;
+  }
+
   .step-circle {
     width: 30px;
     height: 30px;
@@ -539,15 +552,6 @@ onMounted(() => {
     margin-left: 0;
     width: 100%;
     text-align: center;
-  }
-
-  .paciente-info p {
-    font-size: 16px;
-  }
-
-  .badge {
-    font-size: 12px;
-    padding: 3px 10px;
   }
 
   .seguro-buttons {

@@ -175,9 +175,7 @@
                 type="button"
                 class="toggle-password"
                 @click="showPassword = !showPassword"
-                :aria-label="
-                  showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'
-                "
+                :aria-label="showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'"
               >
                 👁️
               </button>
@@ -199,11 +197,7 @@
                 type="button"
                 class="toggle-password"
                 @click="showConfirmPassword = !showConfirmPassword"
-                :aria-label="
-                  showConfirmPassword
-                    ? 'Ocultar contraseña'
-                    : 'Mostrar contraseña'
-                "
+                :aria-label="showConfirmPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'"
               >
                 👁️
               </button>
@@ -238,6 +232,7 @@ import { ref, reactive } from "vue";
 import { useRouter } from "vue-router";
 import { authService } from "../../services/authService";
 import { personaService } from "../../services/personaService";
+import { supabase } from "../../lib/supabaseClient";
 
 const router = useRouter();
 
@@ -262,23 +257,20 @@ const formData = reactive({
 });
 
 function goBack() {
-  router.push("/reservar-cita");
+  router.push({ name: "Bienvenida" });
 }
 
 async function handleRegistro() {
-  // Validar que las contraseñas coincidan
   if (formData.password !== formData.confirmPassword) {
     alert("Las contraseñas no coinciden");
     return;
   }
 
-  // Validar políticas
   if (!formData.aceptaPoliticas) {
     alert("Debes aceptar las políticas de privacidad");
     return;
   }
 
-  // Validar contraseña mínima
   if (formData.password.length < 6) {
     alert("La contraseña debe tener al menos 6 caracteres");
     return;
@@ -287,70 +279,96 @@ async function handleRegistro() {
   loading.value = true;
 
   try {
-    // PASO 1: Registrar usuario en tabla 'usuarios'
-    console.log("Registrando usuario...");
+    console.log("🔄 Registrando usuario...");
     const { data: usuario, error: errorUsuario } = await authService.registrar(
       formData.correo,
       formData.password
     );
 
     if (errorUsuario) {
-      console.error("Error al registrar usuario:", errorUsuario);
-
-      if (
-        errorUsuario.includes("duplicate") ||
-        errorUsuario.includes("unique")
-      ) {
+      console.error("❌ Error al registrar usuario:", errorUsuario);
+      if (errorUsuario.includes("duplicate") || errorUsuario.includes("unique")) {
         alert("Este correo ya está registrado");
       } else {
         alert("Error al registrar: " + errorUsuario);
       }
-
       loading.value = false;
       return;
     }
 
-    console.log("Usuario creado exitosamente:", usuario);
+    console.log("✅ Usuario creado exitosamente:", usuario);
 
-    // PASO 2: Crear perfil de persona asociado al usuario
-    console.log("Creando perfil de persona...");
+    console.log("🔄 Buscando tipo de documento:", formData.tipoDocumento);
+    
+    let nombreTipoDocumento = "";
+    if (formData.tipoDocumento === "dni") nombreTipoDocumento = "DNI";
+    if (formData.tipoDocumento === "carnet") nombreTipoDocumento = "Carnet de Extranjería";
+    if (formData.tipoDocumento === "pasaporte") nombreTipoDocumento = "Pasaporte";
 
-    // Mapear idTipoDocumento correctamente
-    let idTipoDocumento = 1; // DNI por defecto
-    if (formData.tipoDocumento === "carnet") idTipoDocumento = 2;
-    if (formData.tipoDocumento === "pasaporte") idTipoDocumento = 3;
+    const { data: listaDoc } = await supabase
+      .from("lista")
+      .select("id")
+      .eq("nombre", "Tipo Documento")
+      .maybeSingle();
 
-    const { data: persona, error: errorPersona } =
-      await personaService.crearPersona({
-        numero_documento: parseInt(formData.numeroDocumento),
-        apellido_paterno: formData.apellidoPaterno,
-        apellido_materno: formData.apellidoMaterno,
-        nombres: formData.nombres,
-        fecha_nacimiento: formData.fechaNacimiento,
-        telefono: formData.celular,
-        genero: formData.genero,
-        sede: formData.sede,
-        idUsuario: usuario?.id,
-        idRol: 5,
-        idTipoDocumento: idTipoDocumento,
-      });
-
-    if (errorPersona) {
-      console.error("Error al crear persona:", errorPersona);
-      alert(
-        "Usuario creado pero hubo un error al crear el perfil. Por favor contacta a soporte."
-      );
-    } else {
-      console.log("Persona creada exitosamente:", persona);
+    if (!listaDoc) {
+      alert("Error: No se encontró la lista de Tipo Documento");
+      loading.value = false;
+      return;
     }
 
-    loading.value = false;
-    alert("¡Registro exitoso! Ahora puedes iniciar sesión");
+    const { data: tipoDoc } = await supabase
+      .from("listaopciones")
+      .select("id")
+      .eq("idlista", listaDoc.id)
+      .eq("nombre", nombreTipoDocumento)
+      .maybeSingle();
 
+    if (!tipoDoc) {
+      alert("Error: No se encontró el tipo de documento");
+      loading.value = false;
+      return;
+    }
+
+    console.log("✅ Tipo de documento encontrado con ID:", tipoDoc.id);
+
+    const generoMapeado = formData.genero === "masculino" ? "M" : "F";
+
+    console.log("🔄 Creando perfil de persona...");
+    
+    const datosPersona = {
+      numero_documento: parseInt(formData.numeroDocumento),
+      apellido_paterno: formData.apellidoPaterno,
+      apellido_materno: formData.apellidoMaterno,
+      nombres: formData.nombres,
+      fecha_nacimiento: formData.fechaNacimiento,
+      telefono: formData.celular,
+      genero: generoMapeado,
+      sede: formData.sede,
+      idusuario: usuario?.id,
+      idtipodocumento: tipoDoc.id,
+    };
+
+    console.log("📤 Enviando datos de persona:", datosPersona);
+
+    const { data: persona, error: errorPersona } = await personaService.crearPersona(datosPersona);
+
+    if (errorPersona) {
+      console.error("❌ Error al crear persona:", errorPersona);
+      alert("Error al crear el perfil: " + errorPersona);
+      loading.value = false;
+      return;
+    }
+
+    console.log("✅ Persona creada exitosamente:", persona);
+
+    loading.value = false;
+    alert("¡Registro exitoso! Ahora puedes iniciar sesión.");
     router.push({ name: "Ingresar" });
-  } catch (error) {
-    console.error("Error inesperado:", error);
-    alert("Ocurrió un error inesperado. Por favor intenta nuevamente.");
+    
+  } catch (error: any) {
+    console.error("❌ Error inesperado:", error);
+    alert("Ocurrió un error: " + (error.message || "Error desconocido"));
     loading.value = false;
   }
 }
@@ -481,10 +499,6 @@ form {
 .form-group {
   display: flex;
   flex-direction: column;
-}
-
-.form-group.full-width {
-  width: 100%;
 }
 
 .label-handwritten {
@@ -635,10 +649,6 @@ select {
 }
 
 @media (max-width: 768px) {
-  .registro-page {
-    overflow-y: auto;
-  }
-
   .header-container {
     flex-direction: column;
     align-items: flex-start;
@@ -652,24 +662,16 @@ select {
 
   .registro-card {
     padding: 25px 20px;
-    border-radius: 0;
   }
 
   .form-row-2 {
     grid-template-columns: 1fr;
-    gap: 12px;
-  }
-
-  .radio-group-inline {
-    height: auto;
-    margin-top: 4px;
   }
 }
 
 @media (max-width: 480px) {
   .registro-card {
     padding: 20px 15px;
-    border-radius: 0;
   }
 
   .title {

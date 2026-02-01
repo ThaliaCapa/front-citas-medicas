@@ -9,7 +9,7 @@ export const authService = {
         .insert([
           {
             correo: correo,
-            contrasena: contrasena, // ⚠️ En producción debes encriptar esto
+            contrasena: contrasena,
             estado: 1,
           },
         ])
@@ -27,7 +27,8 @@ export const authService = {
   // Iniciar sesión con NÚMERO DE DOCUMENTO
   async login(numeroDocumento: string, contrasena: string) {
     try {
-      console.log("Buscando persona con documento:", numeroDocumento);
+      console.log("🔍 Iniciando login...");
+      console.log("📄 Buscando persona con documento:", numeroDocumento);
 
       // PASO 1: Buscar la persona por número de documento
       const { data: persona, error: errorPersona } = await supabase
@@ -37,42 +38,45 @@ export const authService = {
         .single();
 
       if (errorPersona || !persona) {
-        console.error("Persona no encontrada:", errorPersona);
+        console.error("❌ Persona no encontrada:", errorPersona);
         throw new Error("Número de documento no encontrado");
       }
 
-      console.log("Persona encontrada:", persona);
+      console.log("✅ Persona encontrada:", persona);
 
-      // PASO 2: Buscar el usuario asociado y validar contraseña
+      // PASO 2: Verificar que la persona tenga un usuario asociado
+      if (!persona.idusuario) {
+        console.error("❌ Esta persona no tiene un usuario asociado");
+        throw new Error("Esta persona no tiene credenciales de acceso");
+      }
+
+      // PASO 3: Buscar el usuario y validar contraseña
       const { data: usuario, error: errorUsuario } = await supabase
         .from("usuarios")
         .select("*")
         .eq("id", persona.idusuario)
         .eq("contrasena", contrasena)
-        .eq("estado", 1)
         .single();
 
       if (errorUsuario || !usuario) {
-        console.error(
-          "Usuario no encontrado o contraseña incorrecta:",
-          errorUsuario
-        );
+        console.error("❌ Usuario no encontrado o contraseña incorrecta:", errorUsuario);
         throw new Error("Contraseña incorrecta");
       }
 
-      console.log("Usuario encontrado:", usuario);
+      console.log("✅ Usuario encontrado:", usuario);
 
-      // PASO 3: Guardar sesión con datos completos
+      // PASO 4: Guardar sesión con datos completos
       const usuarioCompleto = {
         ...usuario,
         persona: persona,
       };
 
       localStorage.setItem("usuario", JSON.stringify(usuarioCompleto));
+      console.log("✅ Sesión guardada exitosamente");
 
       return { data: usuarioCompleto, error: null };
     } catch (error: any) {
-      console.error("Error al iniciar sesión:", error);
+      console.error("❌ Error en login:", error);
       return { data: null, error: error.message || "Credenciales incorrectas" };
     }
   },
