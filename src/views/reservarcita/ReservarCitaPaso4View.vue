@@ -114,20 +114,55 @@
 </template>
 
 <script setup lang="ts">
-import { reactive } from "vue";
+import { reactive, onMounted } from "vue";
 import { useRouter } from "vue-router";
 
 const router = useRouter();
 
-// Datos de la cita (estos vendrían de un store o de los pasos anteriores)
+// Datos de la cita (se cargarán del sessionStorage)
 const datoCita = reactive({
-  paciente: "Juan Pérez",
-  especialidad: "Medicina General",
-  medico: "Dr. García López",
-  sede: "Sede Principal - Lima",
-  consultorio: "Consultorio 3B",
-  diaHora: "15/12/2024 - 10:00 AM",
-  precio: "132.00",
+  paciente: "",
+  especialidad: "",
+  medico: "",
+  sede: "",
+  consultorio: "",
+  diaHora: "",
+  precio: "",
+});
+
+onMounted(() => {
+  // Obtener datos del paso 3
+  const paso3Str = sessionStorage.getItem("datosPaso3");
+  
+  console.log("📦 Recuperando datos del paso 3...");
+  console.log("   - sessionStorage datosPaso3:", paso3Str);
+  
+  if (paso3Str) {
+    const datosPaso3 = JSON.parse(paso3Str);
+    console.log("✅ Datos parseados:", datosPaso3);
+    
+    // Asignar los datos a datoCita
+    datoCita.paciente = datosPaso3.paciente || "No disponible";
+    datoCita.especialidad = datosPaso3.especialidad || "No disponible";
+    datoCita.medico = datosPaso3.medico || "No disponible";
+    datoCita.sede = datosPaso3.sede || "Sede Principal - Lima";
+    datoCita.consultorio = datosPaso3.consultorio || "Consultorio 3B";
+    datoCita.diaHora = datosPaso3.fechaHora || "No disponible";
+    datoCita.precio = datosPaso3.precio || "132.00";
+    
+    console.log("✅ Datos del Paso 3 cargados correctamente:");
+    console.log("   - Paciente:", datoCita.paciente);
+    console.log("   - Especialidad:", datoCita.especialidad);
+    console.log("   - Médico:", datoCita.medico);
+    console.log("   - Sede:", datoCita.sede);
+    console.log("   - Consultorio:", datoCita.consultorio);
+    console.log("   - Día y Hora:", datoCita.diaHora);
+    console.log("   - Precio:", datoCita.precio);
+  } else {
+    console.error("❌ No se encontraron datos del paso 3 en sessionStorage");
+    alert("No se encontraron datos de la cita. Regresando al inicio...");
+    router.push({ name: "ReservarCita" });
+  }
 });
 
 function regresarPaso3() {
@@ -135,7 +170,7 @@ function regresarPaso3() {
 }
 
 function reservarYPagar() {
-  console.log("Reservar y pagar ahora");
+  console.log("💳 Reservar y pagar ahora");
   // Simular proceso de pago
   alert("Procesando pago...");
   setTimeout(() => {
@@ -144,7 +179,7 @@ function reservarYPagar() {
 }
 
 function reservarDiaCita() {
-  console.log("Reservar y pagar el día de la cita");
+  console.log("📅 Reservar y pagar el día de la cita");
   // Ir directamente a confirmación
   router.push({ name: "ReservarCitaPaso5" });
 }

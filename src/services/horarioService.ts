@@ -30,7 +30,7 @@ export const horarioService = {
 
       const { data: doctor, error: errorDoctor } = await supabase
         .from("persona")
-        .select("id, nombres, apellido_paterno, apellido_materno, foto_url, idespecialidad")
+        .select("id, nombres, apellido_paterno, apellido_materno, idespecialidad")
         .eq("id", idDoctor)
         .single();
 
@@ -87,11 +87,12 @@ export const horarioService = {
 
       const { data: doctores, error: errorDoctores } = await supabase
         .from("persona")
-        .select("id, nombres, apellido_paterno, apellido_materno, foto_url, idespecialidad")
+        .select("id, nombres, apellido_paterno, apellido_materno, idespecialidad")
         .in("id", doctorIds);
 
       if (errorDoctores) {
         console.error("❌ Error al obtener doctores:", errorDoctores);
+        console.error("❌ Detalle del error:", JSON.stringify(errorDoctores));
       }
 
       console.log("👨‍⚕️ Doctores encontrados:", doctores);

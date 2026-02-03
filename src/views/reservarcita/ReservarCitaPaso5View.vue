@@ -130,35 +130,212 @@
 </template>
 
 <script setup lang="ts">
-import { reactive } from "vue";
+import { reactive, onMounted } from "vue";
 import { useRouter } from "vue-router";
+import jsPDF from "jspdf";
 
 const router = useRouter();
 
 // Datos de la cita confirmada
 const citaData = reactive({
-  paciente: "Juan Pérez",
-  especialidad: "Medicina General",
-  medico: "Dr. García López",
-  sede: "Sede Principal - Lima",
-  consultorio: "Consultorio 3B",
-  fechaHora: "15/12/2024 - 10:00 AM",
-  precio: "132.00",
+  paciente: "",
+  especialidad: "",
+  medico: "",
+  sede: "",
+  consultorio: "",
+  fechaHora: "",
+  precio: "",
   estado: "CONFIRMADA",
 });
 
+onMounted(() => {
+  // Obtener datos del paso 3
+  const paso3Str = sessionStorage.getItem("datosPaso3");
+  
+  console.log("📦 Paso 5 - Recuperando datos de la cita...");
+  console.log("   - sessionStorage datosPaso3:", paso3Str);
+  
+  if (paso3Str) {
+    const datosPaso3 = JSON.parse(paso3Str);
+    console.log("✅ Datos parseados:", datosPaso3);
+    
+    // Asignar los datos reales a citaData
+    citaData.paciente = datosPaso3.paciente || "No disponible";
+    citaData.especialidad = datosPaso3.especialidad || "No disponible";
+    citaData.medico = datosPaso3.medico || "No disponible";
+    citaData.sede = datosPaso3.sede || "Centro";
+    citaData.consultorio = datosPaso3.consultorio || "Por asignar";
+    citaData.fechaHora = datosPaso3.fechaHora || "No disponible";
+    citaData.precio = datosPaso3.precio || "132.00";
+    
+    console.log("✅ Datos de la cita cargados correctamente:");
+    console.log("   - Paciente:", citaData.paciente);
+    console.log("   - Especialidad:", citaData.especialidad);
+    console.log("   - Médico:", citaData.medico);
+    console.log("   - Sede:", citaData.sede);
+    console.log("   - Consultorio:", citaData.consultorio);
+    console.log("   - Fecha y Hora:", citaData.fechaHora);
+    console.log("   - Precio:", citaData.precio);
+    console.log("   - Estado:", citaData.estado);
+  } else {
+    console.error("❌ No se encontraron datos de la cita en sessionStorage");
+    alert("No se encontraron datos de la cita. Regresando al inicio...");
+    router.push({ name: "ReservarCita" });
+  }
+});
+
 function descargarComprobante() {
-  console.log("Descargar comprobante");
-  alert("Descargando comprobante en PDF...");
-  // Aquí iría la lógica para generar y descargar el PDF
+  console.log("📄 Generando comprobante PDF...");
+  
+  try {
+    // Crear nuevo documento PDF
+    const doc = new jsPDF();
+    
+    // Configuración
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const margin = 20;
+    let yPosition = 20;
+    
+    // ENCABEZADO
+    doc.setFontSize(24);
+    doc.setFont("helvetica", "bold");
+    doc.text("CLÍNICA THALIA", pageWidth / 2, yPosition, { align: "center" });
+    
+    yPosition += 10;
+    doc.setFontSize(18);
+    doc.text("Comprobante de Cita Médica", pageWidth / 2, yPosition, { align: "center" });
+    
+    yPosition += 15;
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "normal");
+    doc.text(`Fecha de emisión: ${new Date().toLocaleDateString('es-PE')}`, pageWidth / 2, yPosition, { align: "center" });
+    
+    // Línea separadora
+    yPosition += 10;
+    doc.setLineWidth(0.5);
+    doc.line(margin, yPosition, pageWidth - margin, yPosition);
+    
+    // DATOS DE LA CITA
+    yPosition += 15;
+    doc.setFontSize(14);
+    doc.setFont("helvetica", "bold");
+    doc.text("DATOS DE LA CITA", margin, yPosition);
+    
+    yPosition += 10;
+    doc.setFontSize(11);
+    doc.setFont("helvetica", "normal");
+    
+    // Paciente
+    doc.setFont("helvetica", "bold");
+    doc.text("Paciente:", margin, yPosition);
+    doc.setFont("helvetica", "normal");
+    doc.text(citaData.paciente, margin + 40, yPosition);
+    
+    yPosition += 8;
+    doc.setFont("helvetica", "bold");
+    doc.text("Especialidad:", margin, yPosition);
+    doc.setFont("helvetica", "normal");
+    doc.text(citaData.especialidad, margin + 40, yPosition);
+    
+    yPosition += 8;
+    doc.setFont("helvetica", "bold");
+    doc.text("Médico:", margin, yPosition);
+    doc.setFont("helvetica", "normal");
+    doc.text(citaData.medico, margin + 40, yPosition);
+    
+    yPosition += 8;
+    doc.setFont("helvetica", "bold");
+    doc.text("Sede:", margin, yPosition);
+    doc.setFont("helvetica", "normal");
+    doc.text(citaData.sede, margin + 40, yPosition);
+    
+    yPosition += 8;
+    doc.setFont("helvetica", "bold");
+    doc.text("Consultorio:", margin, yPosition);
+    doc.setFont("helvetica", "normal");
+    doc.text(citaData.consultorio, margin + 40, yPosition);
+    
+    // Fecha y Hora destacada
+    yPosition += 15;
+    doc.setFillColor(91, 201, 171);
+    doc.rect(margin, yPosition - 5, pageWidth - 2 * margin, 12, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFont("helvetica", "bold");
+    doc.text("Fecha y Hora:", margin + 5, yPosition + 3);
+    doc.text(citaData.fechaHora, margin + 50, yPosition + 3);
+    
+    // Precio destacado
+    yPosition += 15;
+    doc.setFillColor(91, 201, 171);
+    doc.rect(margin, yPosition - 5, pageWidth - 2 * margin, 12, 'F');
+    doc.text("Precio:", margin + 5, yPosition + 3);
+    doc.text(`S/ ${citaData.precio}`, margin + 50, yPosition + 3);
+    
+    // Estado
+    yPosition += 15;
+    doc.setTextColor(0, 0, 0);
+    doc.setFillColor(212, 237, 218);
+    doc.rect(margin, yPosition - 5, pageWidth - 2 * margin, 12, 'F');
+    doc.setTextColor(21, 87, 36);
+    doc.text("Estado:", margin + 5, yPosition + 3);
+    doc.text(citaData.estado, margin + 50, yPosition + 3);
+    
+    // INFORMACIÓN IMPORTANTE
+    yPosition += 20;
+    doc.setTextColor(0, 0, 0);
+    doc.setFontSize(12);
+    doc.setFont("helvetica", "bold");
+    doc.text("INFORMACIÓN IMPORTANTE", margin, yPosition);
+    
+    yPosition += 8;
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "normal");
+    
+    const infoItems = [
+      "• Por favor, llega 15 minutos antes de tu cita",
+      "• Recuerda traer tu documento de identidad",
+      "• Si tienes seguro, trae tu tarjeta de asegurado",
+      "• Puedes reprogramar o cancelar tu cita con 24 horas de anticipación"
+    ];
+    
+    infoItems.forEach(item => {
+      doc.text(item, margin, yPosition);
+      yPosition += 6;
+    });
+    
+    // FOOTER
+    yPosition = doc.internal.pageSize.getHeight() - 30;
+    doc.setFontSize(9);
+    doc.setFont("helvetica", "italic");
+    doc.setTextColor(100, 100, 100);
+    doc.text("Clínica Thalia - Tu salud es nuestra prioridad", pageWidth / 2, yPosition, { align: "center" });
+    yPosition += 5;
+    doc.text("www.clinicathalia.com | contacto@clinicathalia.com | (01) 123-4567", pageWidth / 2, yPosition, { align: "center" });
+    
+    // Descargar el PDF
+    const nombreArchivo = `Comprobante_Cita_${citaData.paciente.replace(/\s+/g, '_')}_${new Date().getTime()}.pdf`;
+    doc.save(nombreArchivo);
+    
+    console.log("✅ PDF generado exitosamente:", nombreArchivo);
+  } catch (error) {
+    console.error("❌ Error al generar PDF:", error);
+    alert("Error al generar el comprobante. Por favor, intenta de nuevo.");
+  }
 }
 
 function irAPerfil() {
+  console.log("👤 Ir a Mi Perfil");
   router.push({ name: "MiPerfil" });
 }
 
 function irAInicio() {
-  router.push({ name: "Inicio" });
+  console.log("🏠 Volver al Inicio");
+  // Limpiar sessionStorage de los pasos de reserva
+  sessionStorage.removeItem("pacienteSeleccionado");
+  sessionStorage.removeItem("datosPaso2");
+  sessionStorage.removeItem("datosPaso3");
+  
+  router.push({ name: "BienvenidaIngresar" });
 }
 </script>
 
