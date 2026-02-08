@@ -15,7 +15,9 @@ import ReservarCitaPaso5View from "../views/reservarcita/ReservarCitaPaso5View.v
 import BienvenidaPortalView from "../views/ingresar/BienvenidaPortalView.vue";
 import MiPerfilView from "../views/ingresar/MiPerfilView.vue";
 
-
+// IMPORTAR COMPONENTES DE ADMINISTRACIÓN
+import AdminDoctoresView from "../views/administrador/AdminDoctoresView.vue";
+import AdminHorariosView from "../views/administrador/AdminHorariosView.vue";
 
 const routes = [
   // RUTAS PRINCIPALES CON NAVBAR (Inicio, Contacto, Mi Perfil)
@@ -35,6 +37,7 @@ const routes = [
       },
     ],
   },
+
   // RUTAS DE SESIÓN (Login, Registro, Reservar Cita)
   {
     path: "/reservar-cita",
@@ -93,7 +96,33 @@ const routes = [
       {
         path: "editar-perfil",
         name: "EditarPerfil",
-        component:MiPerfilView,
+        component: MiPerfilView,
+      },
+    ],
+  },
+
+  // =============================================
+  // RUTAS DE ADMINISTRACIÓN
+  // =============================================
+  {
+    path: "/admin",
+    component: SessionLayaout,
+    children: [
+      {
+        path: "",
+        redirect: "/admin/doctores",
+      },
+      {
+        path: "doctores",
+        name: "AdminDoctores",
+        component: AdminDoctoresView,
+        meta: { requiresAuth: true, requiresAdmin: true },
+      },
+      {
+        path: "horarios",
+        name: "AdminHorarios",
+        component: AdminHorariosView,
+        meta: { requiresAuth: true, requiresAdmin: true },
       },
     ],
   },
@@ -102,6 +131,30 @@ const routes = [
 const router = createRouter({
   history: createWebHistory(),
   routes,
+});
+
+// GUARD DE NAVEGACIÓN
+router.beforeEach((to, from, next) => {
+  const usuarioStr = sessionStorage.getItem('usuarioActual');
+  
+  // Si la ruta requiere autenticación
+  if (to.meta.requiresAuth && !usuarioStr) {
+    next({ name: 'Ingresar' });
+    return;
+  }
+  
+  // Si la ruta requiere ser admin
+  if (to.meta.requiresAdmin && usuarioStr) {
+    const usuario = JSON.parse(usuarioStr);
+    // Ajusta el ID del rol admin según tu base de datos
+    if (usuario.idrol !== 121) { 
+      alert('⚠️ No tienes permisos de administrador');
+      next({ name: 'BienvenidaIngresar' });
+      return;
+    }
+  }
+  
+  next();
 });
 
 export default router;

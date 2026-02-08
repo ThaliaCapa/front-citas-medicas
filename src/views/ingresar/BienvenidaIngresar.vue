@@ -32,6 +32,13 @@
             </button>
           </div>
 
+          <!-- BOTÓN ADMIN (SOLO VISIBLE PARA ADMINISTRADORES) -->
+          <div v-if="esAdmin" class="admin-section">
+            <button class="btn-admin" @click="irAAdmin">
+              🔧 Panel de Administración
+            </button>
+          </div>
+
           <!-- CAMPOS DE INFORMACIÓN -->
           <div class="info-fields">
             <div class="info-field">
@@ -64,24 +71,14 @@
           <div class="section-accordion">
             <div class="accordion-header" @click="toggleCitasPresenciales">
               <span>Citas Presenciales Programadas</span>
-              <span class="arrow" :class="{ open: showCitasPresenciales }"
-                >˅</span
-              >
+              <span class="arrow" :class="{ open: showCitasPresenciales }">˅</span>
             </div>
             <transition name="slide">
               <div v-if="showCitasPresenciales" class="accordion-content">
-                <div
-                  v-if="citasPresenciales.length === 0"
-                  class="empty-message"
-                >
+                <div v-if="citasPresenciales.length === 0" class="empty-message">
                   No tienes citas programadas
                 </div>
-                <div
-                  v-else
-                  class="cita-item"
-                  v-for="cita in citasPresenciales"
-                  :key="cita.id"
-                >
+                <div v-else class="cita-item" v-for="cita in citasPresenciales" :key="cita.id">
                   <p><strong>Fecha:</strong> {{ cita.fecha }}</p>
                   <p><strong>Hora:</strong> {{ cita.hora }}</p>
                   <p><strong>Especialidad:</strong> {{ cita.especialidad }}</p>
@@ -102,12 +99,7 @@
                 <div v-if="historialCitas.length === 0" class="empty-message">
                   No tienes historial de citas
                 </div>
-                <div
-                  v-else
-                  class="cita-item"
-                  v-for="cita in historialCitas"
-                  :key="cita.id"
-                >
+                <div v-else class="cita-item" v-for="cita in historialCitas" :key="cita.id">
                   <p><strong>Fecha:</strong> {{ cita.fecha }}</p>
                   <p><strong>Hora:</strong> {{ cita.hora }}</p>
                   <p><strong>Especialidad:</strong> {{ cita.especialidad }}</p>
@@ -124,15 +116,16 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from "vue";
+/* eslint-disable */
+import { ref, reactive, onMounted, computed } from "vue";
 import { useRouter } from "vue-router";
 import { authService } from "../../services/authService";
 
 const router = useRouter();
 
 const nombreUsuario = ref("Usuario");
-
 const userPhoto = ref("");
+
 const userData = reactive({
   sexo: "Cargando...",
   edad: "Cargando...",
@@ -144,9 +137,30 @@ const userData = reactive({
 const showCitasPresenciales = ref(false);
 const showHistorial = ref(false);
 
-const citasPresenciales = ref([]);
+interface Cita {
+  id: number;
+  fecha: string;
+  hora: string;
+  especialidad: string;
+  doctor: string;
+  estado?: string;
+}
 
-const historialCitas = ref([]);
+const citasPresenciales = ref<Cita[]>([]);
+const historialCitas = ref<Cita[]>([]);
+
+const esAdmin = computed(() => {
+  const usuarioStr = sessionStorage.getItem('usuarioActual');
+  if (usuarioStr) {
+    try {
+      const usuario = JSON.parse(usuarioStr);
+      return usuario.idrol === 121;
+    } catch (e) {
+      return false;
+    }
+  }
+  return false;
+});
 
 onMounted(() => {
   cargarDatosUsuario();
@@ -166,7 +180,6 @@ function cargarDatosUsuario() {
     const persona = usuarioActual.persona;
     
     nombreUsuario.value = `${persona.nombres} ${persona.apellido_paterno}`;
-    
     userData.sexo = persona.genero || "No especificado";
     
     if (persona.fecha_nacimiento) {
@@ -190,14 +203,6 @@ function cargarDatosUsuario() {
   }
 }
 
-function goToInicio() {
-  router.push("/");
-}
-
-function goToContacto() {
-  router.push("/contacto");
-}
-
 function editarPerfil() {
   router.push({ name: "EditarPerfil" });
 }
@@ -213,6 +218,10 @@ function toggleCitasPresenciales() {
 function toggleHistorial() {
   showHistorial.value = !showHistorial.value;
 }
+
+function irAAdmin() {
+  router.push({ name: 'AdminDoctores' });
+}
 </script>
 
 <style scoped>
@@ -227,88 +236,6 @@ function toggleHistorial() {
 .perfil-page {
   min-height: 100vh;
   background-color: #b8bdc4;
-}
-
-.header {
-  background-color: #e8eaed;
-  padding: 20px 50px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  position: sticky;
-  top: 0;
-  z-index: 100;
-}
-
-.logo {
-  display: flex;
-  align-items: center;
-  gap: 15px;
-}
-
-.logo-img {
-  width: 60px;
-  height: 60px;
-  border-radius: 12px;
-  object-fit: cover;
-}
-
-.logo-text {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.logo-title {
-  font-family: "Caveat", cursive;
-  font-size: 28px;
-  font-weight: 700;
-  color: #2c2c2c;
-  line-height: 1;
-}
-
-.logo-subtitle {
-  font-family: "Patrick Hand", cursive;
-  font-size: 14px;
-  color: #666;
-  line-height: 1;
-}
-
-.nav {
-  display: flex;
-  gap: 40px;
-  align-items: center;
-}
-
-.nav-link {
-  font-family: "Caveat", cursive;
-  font-size: 24px;
-  color: #2c2c2c;
-  text-decoration: none;
-  transition: all 0.3s ease;
-  cursor: pointer;
-  position: relative;
-}
-
-.nav-link:hover {
-  color: #5bc9ab;
-}
-
-.nav-link.active {
-  color: #5bc9ab;
-  font-weight: 700;
-}
-
-.nav-link.active::after {
-  content: "";
-  position: absolute;
-  bottom: -5px;
-  left: 0;
-  right: 0;
-  height: 3px;
-  background-color: #5bc9ab;
-  border-radius: 2px;
 }
 
 .main-content {
@@ -439,6 +366,35 @@ function toggleHistorial() {
   background-color: #4ab89a;
   transform: translateY(-2px);
   box-shadow: 0 6px 18px rgba(0, 0, 0, 0.2);
+}
+
+.admin-section {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  margin: 20px 0;
+}
+
+.btn-admin {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  padding: 16px 40px;
+  border-radius: 15px;
+  font-family: "Patrick Hand", cursive;
+  font-size: 18px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+  width: 100%;
+  max-width: 400px;
+}
+
+.btn-admin:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(102, 126, 234, 0.5);
+  background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
 }
 
 .info-fields {
@@ -601,22 +557,6 @@ function toggleHistorial() {
 }
 
 @media (max-width: 768px) {
-  .header {
-    flex-direction: column;
-    gap: 20px;
-    padding: 20px 30px;
-  }
-
-  .nav {
-    gap: 25px;
-    flex-wrap: wrap;
-    justify-content: center;
-  }
-
-  .nav-link {
-    font-size: 20px;
-  }
-
   .main-content {
     padding: 35px 25px;
   }
@@ -643,31 +583,6 @@ function toggleHistorial() {
 }
 
 @media (max-width: 480px) {
-  .header {
-    padding: 15px 20px;
-  }
-
-  .logo-img {
-    width: 50px;
-    height: 50px;
-  }
-
-  .logo-title {
-    font-size: 24px;
-  }
-
-  .logo-subtitle {
-    font-size: 12px;
-  }
-
-  .nav {
-    gap: 18px;
-  }
-
-  .nav-link {
-    font-size: 18px;
-  }
-
   .main-content {
     padding: 25px 15px;
   }
@@ -677,6 +592,11 @@ function toggleHistorial() {
   }
 
   .btn-reservar {
+    padding: 14px 25px;
+    font-size: 16px;
+  }
+  
+  .btn-admin {
     padding: 14px 25px;
     font-size: 16px;
   }
